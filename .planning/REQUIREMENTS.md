@@ -81,40 +81,40 @@
 
 ## Traceability
 
-Updated during roadmap creation.
+Updated: 2026-05-22 after roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| AUTH-03 | — | Pending |
-| COLL-01 | — | Pending |
-| COLL-02 | — | Pending |
-| COLL-03 | — | Pending |
-| RANK-01 | — | Pending |
-| RANK-02 | — | Pending |
-| RANK-03 | — | Pending |
-| RANK-04 | — | Pending |
-| RANK-05 | — | Pending |
-| RANK-06 | — | Pending |
-| RANK-07 | — | Pending |
-| RANK-08 | — | Pending |
-| RANK-09 | — | Pending |
-| RANK-10 | — | Pending |
-| REFRESH-01 | — | Pending |
-| SYNC-01 | — | Pending |
-| SYNC-02 | — | Pending |
-| SYNC-03 | — | Pending |
-| DISP-01 | — | Pending |
-| DISP-02 | — | Pending |
-| PERSIST-01 | — | Pending |
-| PERSIST-02 | — | Pending |
+| AUTH-01 | Phase 3 | Pending |
+| AUTH-02 | Phase 3 | Pending |
+| AUTH-03 | Phase 3 | Pending |
+| COLL-01 | Phase 2 | Pending |
+| COLL-02 | Phase 2 | Pending |
+| COLL-03 | Phase 2 | Pending |
+| RANK-01 | Phase 2 | Pending |
+| RANK-02 | Phase 2 | Pending |
+| RANK-03 | Phase 2 | Pending |
+| RANK-04 | Phase 2 | Pending |
+| RANK-05 | Phase 2 | Pending |
+| RANK-06 | Phase 1 | Pending |
+| RANK-07 | Phase 1 | Pending |
+| RANK-08 | Phase 1 | Pending |
+| RANK-09 | Phase 1 | Pending |
+| RANK-10 | Phase 1 | Pending |
+| REFRESH-01 | Phase 2 | Pending |
+| SYNC-01 | Phase 3 | Pending |
+| SYNC-02 | Phase 3 | Pending |
+| SYNC-03 | Phase 3 | Pending |
+| DISP-01 | Phase 4 | Pending |
+| DISP-02 | Phase 4 | Pending |
+| PERSIST-01 | Phase 2 | Pending |
+| PERSIST-02 | Phase 2 | Pending |
 
 **Coverage:**
 - v1 requirements: 24 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 24 ⚠️
+- Mapped to phases: 24 (roadmap complete)
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-22*
-*Last updated: 2026-05-22 after initial definition*
+*Last updated: 2026-05-22 after roadmap creation*

@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 ## Current Position
 
 Phase: 1 of 5 (Foundation)
-Plan: 0 of 4 in current phase
-Status: Ready to execute
-Last activity: 2026-05-22 — Phase 1 planned; 4 plans in 3 waves (scaffold → engine+proxy → Firebase deploy)
+Plan: 1 of 4 in current phase
+Status: Executing — Wave 2 in progress
+Last activity: 2026-05-22 — Plan 01-01 complete (scaffold); Wave 2 executing (01-02 ranking engine + 01-03 proxy smoke test)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 25%
 
 ## Performance Metrics
 
@@ -70,5 +70,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-22
-Stopped at: Phase 1 planned — 4 plans verified and ready to execute
+Stopped at: Phase 1 execution started — Wave 1 (Plan 01-01) in progress
 Resume file: .planning/phases/01-foundation/01-01-PLAN.md

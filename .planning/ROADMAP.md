@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 4 plans in 3 waves
 
 **Wave 1**
-- [ ] 01-01-PLAN.md — Project scaffold: all deps installed, folder structure, minimal App.tsx, env files, Vitest config
+- [x] 01-01-PLAN.md — Project scaffold: all deps installed, folder structure, minimal App.tsx, env files, Vitest config
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 01-02-PLAN.md — rankingEngine.ts implementation + full unit test suite (RANK-06 through RANK-10)
@@ -91,7 +91,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/4 | Planned | - |
+| 1. Foundation | 1/4 | Executing | - |
 | 2. Collection & Ranking | 0/TBD | Not started | - |
 | 3. Auth & BGG Sync | 0/TBD | Not started | - |
 | 4. Display Polish | 0/TBD | Not started | - |

@@ -42,9 +42,11 @@ Progress: [░░░░░░░░░░] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- Phase 1: Cloudflare Worker chosen as production CORS proxy (always warm, relays cookies)
+- Phase 1: **Firebase Cloud Functions (Blaze)** chosen as production CORS proxy (replaces Cloudflare Worker; user has existing Firebase project)
+- Phase 1: Session token returned in JSON body (not Set-Cookie relay); SPA stores in Zustand SessionState only
 - Phase 1: Integer-internal rating storage (`801` = 8.01) to eliminate IEEE 754 precision errors
 - Phase 1: BGG write endpoint (`/api/geekrating`) must be smoke-tested before sync phase is built
+- Phase 1: Full tech stack installed upfront; full folder structure established in Phase 1
 
 ### Pending Todos
 
@@ -68,5 +70,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-22
-Stopped at: Roadmap created — ready to plan Phase 1
-Resume file: None
+Stopped at: Phase 1 context gathered — ready to plan Phase 1
+Resume file: .planning/phases/01-foundation/01-CONTEXT.md

@@ -27,10 +27,22 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Success Criteria:**
   1. A manual curl or smoke-test script can fetch a BGG collection through the Vite dev proxy without a CORS error
   2. A manual curl or smoke-test script can POST credentials to BGG, receive a session cookie, and write one rating — confirming the undocumented write endpoint works end-to-end
-  3. The Cloudflare Worker is deployed and the same requests (collection read + rating write) succeed in the production environment
+  3. The Firebase Cloud Function is deployed and the same requests (collection read + rating write) succeed in the production environment
   4. The `rankingEngine` unit test suite passes: all computed ratings are unique, every rating falls within its tier's declared range ([N.00, (N-1).01]), spacing is equal within each tier, and the 990-game hard ceiling is enforced with a clear error
   5. Integer-internal storage is verified: ratings are stored as integers (e.g. `801` = 8.01) and no floating-point uniqueness violations occur across all tested collection sizes
-**Plans:** TBD
+**Plans:** 4 plans in 3 waves
+
+**Wave 1**
+- [ ] 01-01-PLAN.md — Project scaffold: all deps installed, folder structure, minimal App.tsx, env files, Vitest config
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 01-02-PLAN.md — rankingEngine.ts implementation + full unit test suite (RANK-06 through RANK-10)
+- [ ] 01-03-PLAN.md — Vite dev proxy config (/bggapi/* → BGG) + dev smoke test script
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 01-04-PLAN.md — Firebase Cloud Function CORS proxy + deploy + prod smoke test script
+
+**Cross-cutting constraints:** Integer-internal storage (801 = 8.01) enforced across Plans 01-02, 01-03, 01-04; BGG write endpoint treated as [WARN] not [FAIL] across Plans 01-03, 01-04
 
 ### Phase 2: Collection & Ranking
 **Goal:** User enters their BGG username (no password), fetches their owned and previously-rated games, and can immediately start ranking them locally through head-to-head comparisons — all progress persisted to localStorage
@@ -79,7 +91,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/TBD | Not started | - |
+| 1. Foundation | 0/4 | Planned | - |
 | 2. Collection & Ranking | 0/TBD | Not started | - |
 | 3. Auth & BGG Sync | 0/TBD | Not started | - |
 | 4. Display Polish | 0/TBD | Not started | - |

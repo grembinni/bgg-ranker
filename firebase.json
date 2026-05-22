@@ -1,0 +1,9 @@
+{
+  "functions": [
+    {
+      "source": "proxy/functions",
+      "codebase": "bgg-proxy",
+      "ignore": ["node_modules", "lib", ".git"]
+    }
+  ]
+}

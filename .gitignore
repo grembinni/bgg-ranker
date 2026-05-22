@@ -39,3 +39,6 @@ coverage/
 
 # Vite
 vite.config.*.timestamp-*
+
+# Firebase Functions compiled output
+proxy/functions/lib/

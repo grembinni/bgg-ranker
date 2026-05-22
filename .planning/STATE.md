@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 ## Current Position
 
 Phase: 1 of 5 (Foundation)
-Plan: 1 of 4 in current phase
-Status: Executing — Wave 2 in progress
-Last activity: 2026-05-22 — Plan 01-01 complete (scaffold); Wave 2 executing (01-02 ranking engine + 01-03 proxy smoke test)
+Plan: 3 of 4 in current phase
+Status: Executing — Wave 3 in progress (01-04: Firebase deploy, human checkpoint required)
+Last activity: 2026-05-22 — Plans 01-01 through 01-03 complete; Wave 3 executing (01-04 Firebase Cloud Function + prod smoke test)
 
-Progress: [██░░░░░░░░] 25%
+Progress: [███████░░░] 75%
 
 ## Performance Metrics
 

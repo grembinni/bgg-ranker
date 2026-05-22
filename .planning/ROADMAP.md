@@ -36,8 +36,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] 01-01-PLAN.md — Project scaffold: all deps installed, folder structure, minimal App.tsx, env files, Vitest config
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 01-02-PLAN.md — rankingEngine.ts implementation + full unit test suite (RANK-06 through RANK-10)
-- [ ] 01-03-PLAN.md — Vite dev proxy config (/bggapi/* → BGG) + dev smoke test script
+- [x] 01-02-PLAN.md — rankingEngine.ts implementation + full unit test suite (RANK-06 through RANK-10)
+- [x] 01-03-PLAN.md — Vite dev proxy config (/bggapi/* → BGG) + dev smoke test script
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 01-04-PLAN.md — Firebase Cloud Function CORS proxy + deploy + prod smoke test script
@@ -91,7 +91,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 1/4 | Executing | - |
+| 1. Foundation | 3/4 | Executing | - |
 | 2. Collection & Ranking | 0/TBD | Not started | - |
 | 3. Auth & BGG Sync | 0/TBD | Not started | - |
 | 4. Display Polish | 0/TBD | Not started | - |

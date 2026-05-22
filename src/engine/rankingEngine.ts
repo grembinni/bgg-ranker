@@ -99,7 +99,8 @@ export function computeTierAllocations(
  *
  * @param orderedGameIds - Games ordered from best to worst (tier 10 → tier 1)
  * @param allocations    - 10-element array from computeTierAllocations
- * @returns Record mapping gameId → integer rating in [100, 1000]
+ * @returns Record mapping gameId → integer rating in [1, 1000]
+ *   (tier 1 games may have values 1..100; values < 100 are clamped to 100 at display/BGG-sync time per D-11)
  */
 export function assignRatings(
   orderedGameIds: string[],
@@ -116,17 +117,19 @@ export function assignRatings(
     }
 
     const tierMaxInt = tierNum * 100 // 1000 for tier 10, 900 for tier 9, …
-    const tierMinInt =
-      tierNum === 1
-        ? 100 // tier 1 clamped to 1.00 (D-11)
-        : (tierNum - 1) * 100 + 1 // e.g. tier 9 = 801
+    // Each tier has a natural range of 99 integer slots:
+    //   Tier N: [N*100 .. (N-1)*100+1] = N*100, N*100-1, ..., (N-1)*100+1 (99 values)
+    // Tier 1 natural minimum = 1 (i.e. 0.01 in decimal).
+    // D-11: values below 100 (1.00) are only clamped at DISPLAY/BGG-SYNC time, not stored here.
+    // Storing internal values down to integer 1 allows tier 1 to hold up to 99 unique games.
+    const tierMinInt = (tierNum - 1) * 100 + 1 // tier 1=1, tier 2=101, tier 9=801, tier 10=901
 
-    const availableSlots = tierMaxInt - tierMinInt // 99 for tiers 2-10, 0 for tier 1
+    const availableSlots = tierMaxInt - tierMinInt // 99 for all tiers
 
     for (let pos = 0; pos < count; pos++) {
       let rating: number
-      if (count === 1 || availableSlots === 0) {
-        // Single game in tier, or tier 1 (only one valid value)
+      if (count === 1) {
+        // Single game in tier — assign the tier maximum
         rating = tierMaxInt
       } else {
         // Equal spacing: step = floor(availableSlots / (count - 1))
@@ -178,9 +181,11 @@ export function applyUpset(
   const targetRating = ranked[loserPos][1]
   const result = { ...ratings }
 
-  // Shift games between winner and loser positions down by one step (O(k))
-  for (let i = winnerPos; i > loserPos; i--) {
-    result[ranked[i][0]] = ranked[i - 1][1]
+  // Shift games between loser and winner DOWN by one position (O(k)):
+  // Each game at position i takes the rating of the game at position i+1 (one below it).
+  // This frees up the loser's slot for the winner.
+  for (let i = loserPos; i < winnerPos; i++) {
+    result[ranked[i][0]] = ranked[i + 1][1]
   }
   result[winnerId] = targetRating
 

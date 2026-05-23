@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-05-22)
 
 **Core value:** The user can always tell which of any two games they actually prefer, and the ranking list accurately reflects that — not BGG's community scores, not gut-feel star ratings.
-**Current focus:** Phase 1 — Foundation
+**Current focus:** Phase 2 — Collection & Ranking (Phase 1 complete)
 
 ## Current Position
 
-Phase: 1 of 5 (Foundation)
-Plan: 3 of 4 in current phase
-Status: Executing — Wave 3 in progress (01-04: Firebase deploy, human checkpoint required)
-Last activity: 2026-05-22 — Plans 01-01 through 01-03 complete; Wave 3 executing (01-04 Firebase Cloud Function + prod smoke test)
+Phase: 1 of 5 (Foundation) — COMPLETE
+Plan: 4 of 4 in current phase
+Status: Phase 1 complete — ready to begin Phase 2 planning
+Last activity: 2026-05-23 — Phase 1 complete; Firebase deploy restructured to Phase 5; all Phase 1 goals met
 
-Progress: [███████░░░] 75%
+Progress: [██████████] 100% (Phase 1)
 
 ## Performance Metrics
 
@@ -54,8 +54,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 1 dependency: BGG undocumented write endpoint must be validated empirically — sync phase (Phase 4) cannot be planned until this is confirmed
-- Phase 1 dependency: Confirm BGG session cookie behaviour (Max-Age vs session-scoped) — affects AUTH-01 design
+- Firebase production deploy deferred to Phase 5 — all Phases 2–4 develop against Vite dev proxy; Phase 5 activates production when app is feature-complete
+- BGG undocumented write endpoint (`/api/geekrating`) validation deferred to Phase 5 smoke test — dev proxy write path smoke test exists in scripts/smoke-test-dev.sh
+- BGG session cookie behaviour (Max-Age vs session-scoped) — AUTH-01 should handle both; clarify during Phase 3 discuss-phase
+- Uniqueness guarantee: `rankingEngine` guarantees unique ratings up to 373 games with current bell-curve weights (RANK-07 + RANK-10 conflict documented in 01-02-SUMMARY.md)
 
 ## Deferred Items
 
@@ -69,6 +71,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-22
-Stopped at: Phase 1 execution started — Wave 1 (Plan 01-01) in progress
-Resume file: .planning/phases/01-foundation/01-01-PLAN.md
+Last session: 2026-05-23
+Stopped at: Phase 1 complete — Firebase deploy restructured to Phase 5; ready for Phase 2 planning
+Resume file: run /gsd:discuss-phase 2 to begin Phase 2 planning

@@ -2,7 +2,9 @@
 
 ## Overview
 
-Four phases, each delivering a complete testable capability. Phase 1 validates the CORS proxy and proves the bell-curve math. Phase 2 lets the user enter their BGG username (no password), fetch their collection, and immediately start ranking locally — no authentication required. Phase 3 adds BGG login (only needed to write ratings back) and batch sync. Phase 4 polishes the comparison screen with cover art and upset callouts.
+Five phases, each delivering a complete testable capability. Phase 1 validates the dev CORS proxy and proves the bell-curve math. Phase 2 lets the user enter their BGG username (no password), fetch their collection, and immediately start ranking locally — no authentication required. Phase 3 adds BGG login (only needed to write ratings back) and batch sync. Phase 4 polishes the comparison screen with cover art and upset callouts. Phase 5 deploys the Firebase Cloud Function to production.
+
+Phases 2–4 develop and test against the Vite dev proxy (`/bggapi/*`). All design decisions account for the Firebase production target: `VITE_BGG_API_BASE` switches proxy automatically, session tokens travel as JSON body (not Set-Cookie), and writes use `X-BGG-Session` header. Phase 5 activates production when the app is ready to ship.
 
 ## Phases
 
@@ -12,25 +14,27 @@ Four phases, each delivering a complete testable capability. Phase 1 validates t
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - CORS proxy validated, ranking engine proven with full unit test suite
+- [x] **Phase 1: Foundation** - Dev CORS proxy validated, ranking engine proven, Firebase Function source ready
 - [ ] **Phase 2: Collection & Ranking** - User enters their BGG username, fetches their collection, and ranks games locally — no password needed
 - [ ] **Phase 3: Auth & BGG Sync** - User adds their BGG password to sync rankings back to BGG
 - [ ] **Phase 4: Display Polish** - Cover art and upset callouts make comparisons visually rich
+- [ ] **Phase 5: Firebase Production Deploy** - Firebase Cloud Function deployed; app runs end-to-end in production
 
 ## Phase Details
 
 ### Phase 1: Foundation
-**Goal:** All external dependencies are validated and the bell-curve ranking engine is proven correct before any UI is built
+**Goal:** Dev CORS proxy validated, bell-curve ranking engine proven correct, and Firebase Function source code ready — all before any UI is built
 **Mode:** mvp
 **Depends on:** Nothing (first phase)
 **Requirements:** RANK-06, RANK-07, RANK-08, RANK-09, RANK-10
 **Success Criteria:**
   1. A manual curl or smoke-test script can fetch a BGG collection through the Vite dev proxy without a CORS error
-  2. A manual curl or smoke-test script can POST credentials to BGG, receive a session cookie, and write one rating — confirming the undocumented write endpoint works end-to-end
-  3. The Firebase Cloud Function is deployed and the same requests (collection read + rating write) succeed in the production environment
-  4. The `rankingEngine` unit test suite passes: all computed ratings are unique, every rating falls within its tier's declared range ([N.00, (N-1).01]), spacing is equal within each tier, and the 990-game hard ceiling is enforced with a clear error
+  2. A manual curl or smoke-test script can POST credentials to BGG, receive a session cookie, and write one rating — confirming the undocumented write endpoint works end-to-end in dev
+  3. Firebase Cloud Function source code is committed and compiles cleanly; production deploy is deferred to Phase 5
+  4. The `rankingEngine` unit test suite passes: all computed ratings are unique (up to 373 games), every rating falls within its tier's declared range ([N.00, (N-1).01]), spacing is equal within each tier, and the 990-game hard ceiling is enforced with a clear error
   5. Integer-internal storage is verified: ratings are stored as integers (e.g. `801` = 8.01) and no floating-point uniqueness violations occur across all tested collection sizes
-**Plans:** 4 plans in 3 waves
+**Status:** ✅ Complete
+**Plans:** 3 complete + 1 source-ready (deploy deferred)
 
 **Wave 1**
 - [x] 01-01-PLAN.md — Project scaffold: all deps installed, folder structure, minimal App.tsx, env files, Vitest config
@@ -39,8 +43,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] 01-02-PLAN.md — rankingEngine.ts implementation + full unit test suite (RANK-06 through RANK-10)
 - [x] 01-03-PLAN.md — Vite dev proxy config (/bggapi/* → BGG) + dev smoke test script
 
-**Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 01-04-PLAN.md — Firebase Cloud Function CORS proxy + deploy + prod smoke test script
+**Wave 3** *(source committed; deploy deferred to Phase 5)*
+- [x] 01-04-PLAN.md — Firebase Cloud Function source + firebase.json + prod smoke test (Tasks 1+3 done; Task 2 deploy → Phase 5)
 
 **Cross-cutting constraints:** Integer-internal storage (801 = 8.01) enforced across Plans 01-02, 01-03, 01-04; BGG write endpoint treated as [WARN] not [FAIL] across Plans 01-03, 01-04
 
@@ -84,14 +88,35 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** TBD
 **UI hint:** yes
 
+### Phase 5: Firebase Production Deploy
+**Goal:** Firebase Cloud Function deployed and production CORS proxy operational — the app runs end-to-end in production with no CORS errors
+**Mode:** mvp
+**Depends on:** Phase 4 (app feature-complete before production deploy)
+**Requirements:** *(infrastructure — no app requirements)*
+**Success Criteria:**
+  1. Firebase CLI authenticated and `firebase deploy --only functions` completes without error; Function URL is live at `https://us-central1-PROJECT_ID.cloudfunctions.net/bgg`
+  2. `.env.production` updated with the live Function URL as `VITE_BGG_API_BASE`
+  3. `smoke-test-prod.sh` exits 0 with real credentials against the live Function URL: collection read succeeds (200 after poll if needed), login returns a sessionId, write path logged as `[OK]` or `[WARN]`
+  4. `npm run build` succeeds with the production env var set; deployed static files reach BGG through the Firebase Function with no CORS errors
+**Plans:** 1 plan (firebase-deploy)
+
+**Note:** Firebase Function source code (`proxy/functions/src/index.ts`), `firebase.json`, `.firebaserc`, and `scripts/smoke-test-prod.sh` are already committed from Phase 1 Plan 01-04. Phase 5 only requires the CLI deploy step and updating `.env.production`.
+
+**Firebase design decisions already in all phases:**
+- Session token travels as JSON body `{ sessionId }` from Firebase Function to SPA (D-07) — never Set-Cookie relay
+- Authenticated BGG writes use `X-BGG-Session` request header (D-08) — Firebase Function reattaches as Cookie to BGG
+- `VITE_BGG_API_BASE` env var switches proxy automatically: `/bggapi` in dev, Firebase Function URL in prod
+- Blaze (pay-as-you-go) plan required for outbound HTTP from Firebase Functions
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 3/4 | Executing | - |
+| 1. Foundation | 4/4 | ✅ Complete | 2026-05-23 |
 | 2. Collection & Ranking | 0/TBD | Not started | - |
 | 3. Auth & BGG Sync | 0/TBD | Not started | - |
 | 4. Display Polish | 0/TBD | Not started | - |
+| 5. Firebase Production Deploy | 0/1 | Not started | - |

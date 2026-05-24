@@ -9,7 +9,12 @@
 
 import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
-import { fetchCollection as bggFetchCollection, type RawGame } from '../api/bggClient'
+import {
+  fetchCollection as bggFetchCollection,
+  bggLogin,
+  bggRateGame,
+  type RawGame,
+} from '../api/bggClient'
 import {
   initializeRankings,
   applyUpset,
@@ -35,6 +40,7 @@ export interface Game {
 
 interface SessionStateSlice {
   sessionUsername: string | null // ephemeral — NEVER in partialize (AUTH-03, D-08)
+  sessionId: string | null       // ephemeral — NEVER in partialize (AUTH-03, D-13)
 }
 
 interface CollectionStateSlice {
@@ -47,15 +53,21 @@ interface RankingsStateSlice {
   comparisonsTotal: number
   rankingsUsername: string | null // PERSIST-02 guard (D-09) — persisted
   version: number
+  syncedGameIds: string[]         // persisted — SYNC-03 resume anchor (D-11, D-14)
+  comparisonsAtLastSync: number   // persisted — beforeunload predicate (D-12, D-14)
+  // Both start at 0: button disabled until first comparison (Pitfall 5)
 }
 
 interface ComparisonStateSlice {
-  view: 'entry' | 'loading' | 'comparison' | 'error'
+  view: 'entry' | 'loading' | 'comparison' | 'error' | 'syncing'
   currentPair: [string, string] | null
   sessionComparisons: number
   skipQueue: Array<[string, string]>
   loadingMessage: string | null
   errorMessage: string | null
+  syncStatus: 'idle' | 'syncing' | 'session-expired' | 'error' | 'complete' // Q3
+  syncProgress: number  // games written so far in current sync batch
+  syncTotal: number     // total games to write in current sync batch
 }
 
 interface AppActions {
@@ -66,6 +78,13 @@ interface AppActions {
   pick(winnerId: string, loserId: string): void
   skip(): void
   refresh(): void
+  // Phase 3 actions (D-16)
+  login(username: string, password: string): Promise<void>
+  startSync(): Promise<void>
+  markGameSynced(gameId: string): void
+  completeSyncAll(): void
+  reAuthAndResume(password: string): Promise<void>
+  cancelSync(): void
 }
 
 export type AppStore = SessionStateSlice &
@@ -107,6 +126,18 @@ export function selectRandomPair(
 }
 
 // ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * delay — Simple promise-based timer for throttling between BGG write calls.
+ * Defined here to keep the module boundary clean (not imported from bggClient).
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+// ---------------------------------------------------------------------------
 // Store factory (injectable storage for testing)
 // ---------------------------------------------------------------------------
 
@@ -127,18 +158,24 @@ export function createAppStore(rawStorage: StateStorage) {
       (set, get) => ({
         // --- Initial state ---
         sessionUsername: null,
+        sessionId: null,
         games: {},
         lastFetched: null,
         ratings: {},
         comparisonsTotal: 0,
         rankingsUsername: null,
         version: 1,
+        syncedGameIds: [],
+        comparisonsAtLastSync: 0,
         view: 'entry',
         currentPair: null,
         sessionComparisons: 0,
         skipQueue: [],
         loadingMessage: null,
         errorMessage: null,
+        syncStatus: 'idle',
+        syncProgress: 0,
+        syncTotal: 0,
 
         // --- Actions ---
 
@@ -298,6 +335,97 @@ export function createAppStore(rawStorage: StateStorage) {
             currentPair: selectRandomPair(newRatings, []),
           })
         },
+
+        // --- Phase 3 actions (D-16) ---
+
+        async login(username: string, password: string): Promise<void> {
+          set({ view: 'loading', loadingMessage: 'Logging in to BGG…', errorMessage: null })
+          try {
+            const result = await bggLogin(username, password)
+            set({ sessionId: result.sessionId, loadingMessage: 'Fetching your games…' })
+            // Delegate collection fetch to existing action (D-03 sequential messages)
+            await get().fetchCollection(username)
+          } catch {
+            set({
+              view: 'error',
+              errorMessage: 'Could not log in. Check your username and password.',
+              loadingMessage: null,
+            })
+          }
+        },
+
+        async startSync(): Promise<void> {
+          const { ratings, sessionId, syncedGameIds } = get()
+          if (!sessionId) return
+
+          const allIds = Object.keys(ratings)
+          const toSync = allIds.filter(id => !syncedGameIds.includes(id))
+
+          set({
+            view: 'syncing',
+            syncStatus: 'syncing',
+            syncProgress: syncedGameIds.length,
+            syncTotal: allIds.length,
+          })
+
+          for (const gameId of toSync) {
+            // Check per-iteration — cancelSync() sets sessionId=null to abort (Pitfall 4)
+            const currentSessionId = get().sessionId
+            if (!currentSessionId) return
+
+            try {
+              await bggRateGame(gameId, get().ratings[gameId], currentSessionId)
+              get().markGameSynced(gameId)
+            } catch (err) {
+              const status = (err as { status?: number }).status
+              if (status === 401) {
+                // Session expired mid-sync — prompt re-auth inline (D-09)
+                set({ syncStatus: 'session-expired' })
+                return
+              }
+              // Non-401 error: surface to user, stop sync
+              set({ syncStatus: 'error' })
+              return
+            }
+
+            // Throttle: 200–500ms random delay between writes (SYNC-02, T-03-05)
+            await delay(200 + Math.floor(Math.random() * 300))
+          }
+
+          get().completeSyncAll()
+        },
+
+        markGameSynced(gameId: string): void {
+          const { syncedGameIds, syncProgress } = get()
+          set({
+            syncedGameIds: [...syncedGameIds, gameId],
+            syncProgress: syncProgress + 1,
+          })
+        },
+
+        completeSyncAll(): void {
+          const total = get().comparisonsTotal
+          set({
+            syncedGameIds: [],
+            comparisonsAtLastSync: total,
+            syncStatus: 'complete',
+          })
+          // Auto-return to comparison view after brief confirmation (D-07, ~2 seconds)
+          setTimeout(() => set({ view: 'comparison', syncStatus: 'idle' }), 2000)
+        },
+
+        async reAuthAndResume(password: string): Promise<void> {
+          const result = await bggLogin(get().sessionUsername!, password)
+          set({ sessionId: result.sessionId, syncStatus: 'syncing' })
+          // Resume from where sync left off — syncedGameIds tracks already-sent games (D-10)
+          await get().startSync()
+        },
+
+        cancelSync(): void {
+          // Setting sessionId=null triggers the per-iteration abort check in startSync (Pitfall 4)
+          // Do NOT clear syncedGameIds — preserve for resume (Q2 resolution)
+          set({ sessionId: null, view: 'comparison', syncStatus: 'idle' })
+        },
       }),
       {
         name: 'bgg-ranker:v1:collection-and-rankings',
@@ -309,6 +437,10 @@ export function createAppStore(rawStorage: StateStorage) {
           comparisonsTotal: state.comparisonsTotal,
           rankingsUsername: state.rankingsUsername,
           version: state.version,
+          // Phase 3 additions — SYNC-03 resume anchor (D-14)
+          // sessionId is NOT listed here — excluded per AUTH-03, D-13
+          syncedGameIds: state.syncedGameIds,
+          comparisonsAtLastSync: state.comparisonsAtLastSync,
         }),
       }
     )

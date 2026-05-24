@@ -95,7 +95,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] 03-03-PLAN.md — Auth UI slice: UsernameEntry password field + login() wiring + beforeunload guard in App.tsx
 - [ ] 03-04-PLAN.md — Sync UI slice: SyncingView + ComparisonView Sync button + App.tsx SyncingView branch
 
-**UI hint:** yes
+**Cross-cutting constraints:** Integer-internal ratings (ratingInt/100 only at bggRateGame call site) across Plans 03-02, 03-04; sessionId excluded from partialize across Plans 03-01, 03-02; UI components never call bggClient directly across Plans 03-03, 03-04
 
 ### Phase 4: Display Polish
 **Goal:** The comparison screen shows cover art for each game and acknowledges significant ranking upsets with a callout

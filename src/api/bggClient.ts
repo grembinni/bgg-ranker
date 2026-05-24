@@ -62,11 +62,10 @@ export function parseCollectionXml(xmlText: string): RawGame[] {
     .map((item) => {
       const it = item as Record<string, unknown>
       const nameEl = it['name'] as Record<string, unknown> | undefined
-      const yearEl = it['yearpublished'] as Record<string, unknown> | undefined
       return {
         id: String(it['@_objectid'] ?? ''),
-        name: String(nameEl?.['@_value'] ?? ''),
-        yearPublished: Number(yearEl?.['@_value'] ?? 0),
+        name: String(nameEl?.['#text'] ?? ''),
+        yearPublished: Number(it['yearpublished'] ?? 0),
         thumbnail: String(it['thumbnail'] ?? ''),
       }
     })
@@ -140,6 +139,90 @@ export async function poll202Loop(url: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
+// bggLogin
+// ---------------------------------------------------------------------------
+
+/**
+ * bggLogin — Authenticate with BGG and return a session token.
+ *
+ * In development the Vite proxy intercepts the /login/api/v1 response, extracts
+ * the sessionid from Set-Cookie, and returns {sessionId: "..."} as a JSON body —
+ * identical to what the Firebase Function does in production (D-07, Pattern 1, Pitfall 1).
+ *
+ * @param username - BGG username
+ * @param password - BGG password (ephemeral — never stored outside Zustand; AUTH-03)
+ * @returns {sessionId} — token to pass to bggRateGame as X-BGG-Session header
+ * @throws Error on non-2xx or when sessionId is absent from response body
+ */
+export async function bggLogin(
+  username: string,
+  password: string
+): Promise<{ sessionId: string }> {
+  const res = await fetch(`${BGG_API_BASE}/login/api/v1`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ credentials: { username, password } }),
+  })
+
+  if (!res.ok) {
+    throw new Error('BGG login failed: HTTP ' + res.status)
+  }
+
+  const data = (await res.json()) as { sessionId?: string }
+  if (!data.sessionId) {
+    throw new Error('BGG login failed: no sessionId in response')
+  }
+
+  return { sessionId: data.sessionId }
+}
+
+// ---------------------------------------------------------------------------
+// bggRateGame
+// ---------------------------------------------------------------------------
+
+/**
+ * bggRateGame — Write a single game rating to BGG via the undocumented geekrating endpoint.
+ *
+ * ratingInt is integer-internal (e.g. 743 = 7.43). The float conversion happens
+ * here — never stored or passed as a float anywhere else (D-10).
+ *
+ * @param gameId - BGG objectid string
+ * @param ratingInt - Integer-internal rating (e.g. 743 represents 7.43)
+ * @param sessionId - Session token from bggLogin; sent as X-BGG-Session header (D-18)
+ * @throws Error with .status property on non-2xx response (caller detects 401 for session-expired)
+ */
+export async function bggRateGame(
+  gameId: string,
+  ratingInt: number,
+  sessionId: string
+): Promise<void> {
+  // Convert integer-internal rating to 2-decimal float at write time only (D-10)
+  const ratingFloat = (ratingInt / 100).toFixed(2)
+
+  const body = new URLSearchParams({
+    objectid: gameId,
+    objecttype: 'thing',
+    rating: ratingFloat,
+  })
+
+  const res = await fetch(`${BGG_API_BASE}/api/geekrating`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-BGG-Session': sessionId,
+    },
+    body: body.toString(),
+  })
+
+  if (!res.ok) {
+    // Attach .status so caller can detect 401 session-expired (D-18, Pattern 2)
+    throw Object.assign(new Error('BGG write failed: HTTP ' + res.status), {
+      status: res.status,
+    })
+  }
+}
+
+// ---------------------------------------------------------------------------
 // fetchCollection
 // ---------------------------------------------------------------------------
 
@@ -153,8 +236,8 @@ export async function poll202Loop(url: string): Promise<string> {
 export async function fetchCollection(username: string): Promise<RawGame[]> {
   const u = encodeURIComponent(username)
 
-  const ownedUrl = `${BGG_API_BASE}/xmlapi2/collection?username=${u}&own=1&subtype=boardgame&stats=1`
-  const ratedUrl = `${BGG_API_BASE}/xmlapi2/collection?username=${u}&rated=1&own=0&subtype=boardgame&stats=1`
+  const ownedUrl = `${BGG_API_BASE}/xmlapi2/collection?username=${u}&own=1&subtype=boardgame&excludesubtype=boardgameexpansion&stats=1`
+  const ratedUrl = `${BGG_API_BASE}/xmlapi2/collection?username=${u}&rated=1&own=0&subtype=boardgame&excludesubtype=boardgameexpansion&stats=1`
 
   const [ownedXml, ratedXml] = await Promise.all([
     poll202Loop(ownedUrl),

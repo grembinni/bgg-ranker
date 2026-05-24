@@ -69,7 +69,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] 02-02-PLAN.md — Vertical slice: BGG fetch + store + UsernameEntry/Loading/Error views (user can load collection)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 02-03-PLAN.md — Vertical slice: Comparison loop UI (pick/skip/refresh/counter, persistence)
+- [x] 02-03-PLAN.md — Vertical slice: Comparison loop UI (pick/skip/refresh/counter, persistence)
 **UI hint:** yes
 
 ### Phase 3: Auth & BGG Sync
@@ -125,7 +125,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 4/4 | ✅ Complete | 2026-05-23 |
-| 2. Collection & Ranking | 2/3 | In progress | - |
+| 2. Collection & Ranking | 3/3 | ✅ Complete | 2026-05-23 |
 | 3. Auth & BGG Sync | 0/TBD | Not started | - |
 | 4. Display Polish | 0/TBD | Not started | - |
 | 5. Firebase Production Deploy | 0/1 | Not started | - |

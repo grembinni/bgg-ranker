@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-05-22)
 
 **Core value:** The user can always tell which of any two games they actually prefer, and the ranking list accurately reflects that — not BGG's community scores, not gut-feel star ratings.
-**Current focus:** Phase 2 — Collection & Ranking (Phase 1 complete)
+**Current focus:** Phase 3 — Auth & BGG Sync (Phase 2 complete)
 
 ## Current Position
 
-Phase: 2 of 5 (Collection & Ranking) — IN PROGRESS
-Plan: 2 of 3 in current phase
-Status: Plan 02-02 complete — bggClient + store + 3 UI views implemented; all 78 tests GREEN
-Last activity: 2026-05-23 — Plan 02-02 executed; vertical slice from BGG fetch → comparison view complete
+Phase: 2 of 5 (Collection & Ranking) — COMPLETE
+Plan: 3 of 3 in current phase (phase complete)
+Status: Plan 02-03 complete — GameCard + ComparisonView + App.tsx wired; full end-to-end comparison loop working
+Last activity: 2026-05-23 — Plan 02-03 executed; comparison UI vertical slice complete; Phase 2 all 3 plans done
 
-Progress: [██████████] Phase 1 complete | [██████    ] Phase 2 in progress (2/3 plans)
+Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans)
 
 ## Performance Metrics
 
@@ -53,6 +53,8 @@ Recent decisions affecting current work:
 - Phase 2: Single-page conditional rendering (no router); 3 views: entry → loading → comparison
 - Phase 2: PERSIST-02 guard requires games populated (not just ratings) — prevents short-circuit on partial store state
 - Phase 2: createAppStore return type left implicit (UseBoundStore from create()) for React hook compatibility
+- Phase 2: getRankPosition defined at module scope in GameCard.tsx (avoids re-allocation per render)
+- Phase 2: U+00B7 MIDDLE DOT used in combined counter format per UI-SPEC copywriting contract
 
 ### Pending Todos
 
@@ -79,5 +81,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-23
-Stopped at: Plan 02-02 complete — bggClient + store + UsernameEntry/CollectionLoading/ErrorDisplay/App.tsx
-Resume file: .planning/phases/02-collection-ranking/02-03-PLAN.md (run /gsd:execute-phase 2)
+Stopped at: Plan 02-03 complete — GameCard/ComparisonView/App.tsx; Phase 2 all 3 plans complete
+Resume file: None — Phase 2 complete. Next: /gsd:discuss-phase 3 (Auth & BGG Sync)

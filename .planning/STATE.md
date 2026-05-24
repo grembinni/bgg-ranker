@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 ## Current Position
 
 Phase: 2 of 5 (Collection & Ranking) — IN PROGRESS
-Plan: 1 of 3 in current phase
-Status: Plan 02-01 complete — Wave 0 RED scaffolds committed; ready for Plan 02-02
-Last activity: 2026-05-23 — Plan 02-01 executed; 15 bggClient + 24 store RED tests created
+Plan: 2 of 3 in current phase
+Status: Plan 02-02 complete — bggClient + store + 3 UI views implemented; all 78 tests GREEN
+Last activity: 2026-05-23 — Plan 02-02 executed; vertical slice from BGG fetch → comparison view complete
 
-Progress: [██████████] Phase 1 complete | [███       ] Phase 2 in progress (1/3 plans)
+Progress: [██████████] Phase 1 complete | [██████    ] Phase 2 in progress (2/3 plans)
 
 ## Performance Metrics
 
@@ -51,6 +51,8 @@ Recent decisions affecting current work:
 - Phase 2: Username not persisted to localStorage — required every visit; embedded in PersistedRankings for PERSIST-02 guard
 - Phase 2: Game cards show name + year + rank position (#47); thumbnail stored now for Phase 4 to use
 - Phase 2: Single-page conditional rendering (no router); 3 views: entry → loading → comparison
+- Phase 2: PERSIST-02 guard requires games populated (not just ratings) — prevents short-circuit on partial store state
+- Phase 2: createAppStore return type left implicit (UseBoundStore from create()) for React hook compatibility
 
 ### Pending Todos
 
@@ -77,5 +79,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-23
-Stopped at: Plan 02-01 complete — Wave 0 RED test scaffolds (15 bggClient + 24 store tests)
-Resume file: .planning/phases/02-collection-ranking/02-02-PLAN.md (run /gsd:execute-phase 2)
+Stopped at: Plan 02-02 complete — bggClient + store + UsernameEntry/CollectionLoading/ErrorDisplay/App.tsx
+Resume file: .planning/phases/02-collection-ranking/02-03-PLAN.md (run /gsd:execute-phase 2)

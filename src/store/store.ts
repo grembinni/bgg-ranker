@@ -7,7 +7,7 @@
  * localStorage key: bgg-ranker:v1:collection-and-rankings
  */
 
-import { create, type StoreApi } from 'zustand'
+import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import { fetchCollection as bggFetchCollection, type RawGame } from '../api/bggClient'
 import {
@@ -113,11 +113,14 @@ export function selectRandomPair(
 /**
  * createAppStore — Factory that creates the Zustand store with inject-able storage.
  *
+ * Returns a UseBoundStore (callable as a React hook) that also implements StoreApi.
+ *
  * @param rawStorage - Raw StateStorage adapter; wrapped with createJSONStorage internally.
  *                     In tests, pass createMockStorage(). In the browser, pass localStorage.
- * @returns StoreApi<AppStore>
+ * @returns Callable Zustand store hook (UseBoundStore<StoreApi<AppStore>>)
  */
-export function createAppStore(rawStorage: StateStorage): StoreApi<AppStore> {
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+export function createAppStore(rawStorage: StateStorage) {
   const storage = createJSONStorage(() => rawStorage)
   return create<AppStore>()(
     persist(

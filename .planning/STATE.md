@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 ## Current Position
 
-Phase: 1 of 5 (Foundation) — COMPLETE
-Plan: 4 of 4 in current phase
-Status: Phase 1 complete — ready to begin Phase 2 planning
-Last activity: 2026-05-23 — Phase 1 complete; Firebase deploy restructured to Phase 5; all Phase 1 goals met
+Phase: 2 of 5 (Collection & Ranking) — IN PROGRESS
+Plan: 0 of 3 in current phase
+Status: Phase 2 planned — ready to execute
+Last activity: 2026-05-23 — Phase 2 planning complete; 3 plans in 3 waves created
 
-Progress: [██████████] 100% (Phase 1)
+Progress: [██████████] Phase 1 complete | [          ] Phase 2 in progress
 
 ## Performance Metrics
 
@@ -47,6 +47,10 @@ Recent decisions affecting current work:
 - Phase 1: Integer-internal rating storage (`801` = 8.01) to eliminate IEEE 754 precision errors
 - Phase 1: BGG write endpoint (`/api/geekrating`) must be smoke-tested before sync phase is built
 - Phase 1: Full tech stack installed upfront; full folder structure established in Phase 1
+- Phase 2: **COLL-02 (expansion toggle) removed from v1** — boardgames only; no expansion handling in v1
+- Phase 2: Username not persisted to localStorage — required every visit; embedded in PersistedRankings for PERSIST-02 guard
+- Phase 2: Game cards show name + year + rank position (#47); thumbnail stored now for Phase 4 to use
+- Phase 2: Single-page conditional rendering (no router); 3 views: entry → loading → comparison
 
 ### Pending Todos
 
@@ -67,10 +71,11 @@ None yet.
 | Display | Tier groupings in ranked list (DISP-V2-02) | v2 | Requirements |
 | Collection | Reconciliation on return visit (COLL-V2-01) | v2 | Requirements |
 | Collection | Collection filtering (COLL-V2-02) | v2 | Requirements |
+| Collection | Expansion toggle (COLL-02) | v2 | Phase 2 discuss-phase (2026-05-23) |
 | Quality | Single-step undo (QOL-V2-01) | v2 | Requirements |
 
 ## Session Continuity
 
 Last session: 2026-05-23
-Stopped at: Phase 1 complete — Firebase deploy restructured to Phase 5; ready for Phase 2 planning
-Resume file: run /gsd:discuss-phase 2 to begin Phase 2 planning
+Stopped at: Phase 2 planned — 3 plans across 3 waves; verification passed (0 blockers)
+Resume file: .planning/phases/02-collection-ranking/ (run /gsd:execute-phase 2)

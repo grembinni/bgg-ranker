@@ -14,7 +14,7 @@
 ### Collection
 
 - [ ] **COLL-01**: App fetches the user's owned board games from BGG XML API2 (excludes expansions by default)
-- [ ] **COLL-02**: User can toggle to include expansions in the comparison pool
+- ~~**COLL-02**: User can toggle to include expansions in the comparison pool~~ — **moved to v2** (2026-05-23 Phase 2 discuss-phase: boardgames only in v1)
 - [ ] **COLL-03**: App also fetches unowned games the user has previously rated on BGG and includes them in the pool
 
 ### Ranking Engine
@@ -89,7 +89,7 @@ Updated: 2026-05-22 after roadmap creation.
 | AUTH-02 | Phase 3 | Pending |
 | AUTH-03 | Phase 3 | Pending |
 | COLL-01 | Phase 2 | Pending |
-| COLL-02 | Phase 2 | Pending |
+| COLL-02 | v2 | Deferred (2026-05-23) |
 | COLL-03 | Phase 2 | Pending |
 | RANK-01 | Phase 2 | Pending |
 | RANK-02 | Phase 2 | Pending |

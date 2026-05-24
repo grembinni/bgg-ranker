@@ -52,7 +52,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Goal:** User enters their BGG username (no password), fetches their owned and previously-rated games, and can immediately start ranking them locally through head-to-head comparisons — all progress persisted to localStorage
 **Mode:** mvp
 **Depends on:** Phase 1
-**Requirements:** COLL-01, COLL-02, COLL-03, RANK-01, RANK-02, RANK-03, RANK-04, RANK-05, REFRESH-01, PERSIST-01, PERSIST-02
+**Requirements:** COLL-01, COLL-03, RANK-01, RANK-02, RANK-03, RANK-04, RANK-05, REFRESH-01, PERSIST-01, PERSIST-02 (COLL-02 deferred to v2 — see CONTEXT.md D-11)
 **Success Criteria:**
   1. User enters their BGG username (no password), and their board game collection loads (excluding expansions by default); expansion toggle adds them without re-fetching; previously rated unowned games also appear
   2. App handles the BGG 202 queued-response: if the first collection request returns 202, the app polls until 200 arrives — user sees a loading indicator, never a blank or corrupted collection
@@ -60,7 +60,16 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Skip re-queues a pair; manual Refresh redistributes all rankings while preserving relative order and keeping all ratings unique; comparison counter updates after every pick
   5. Rankings survive page reload; if the stored username differs from the current username, stored rankings are discarded and a fresh seed is offered
   6. If the collection exceeds 990 games, the app shows a clear error before any ranking begins
-**Plans:** TBD
+**Plans:** 3 plans
+
+**Wave 1**
+- [ ] 02-01-PLAN.md — Wave 0 test scaffolds (RED tests for bggClient + store before implementation)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 02-02-PLAN.md — Vertical slice: BGG fetch + store + UsernameEntry/Loading/Error views (user can load collection)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 02-03-PLAN.md — Vertical slice: Comparison loop UI (pick/skip/refresh/counter, persistence)
 **UI hint:** yes
 
 ### Phase 3: Auth & BGG Sync
@@ -116,7 +125,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 4/4 | ✅ Complete | 2026-05-23 |
-| 2. Collection & Ranking | 0/TBD | Not started | - |
+| 2. Collection & Ranking | 0/3 | Not started | - |
 | 3. Auth & BGG Sync | 0/TBD | Not started | - |
 | 4. Display Polish | 0/TBD | Not started | - |
 | 5. Firebase Production Deploy | 0/1 | Not started | - |

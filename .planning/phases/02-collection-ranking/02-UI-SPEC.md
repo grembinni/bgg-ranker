@@ -1,7 +1,7 @@
 ---
 phase: 2
 slug: collection-ranking
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-23
@@ -83,7 +83,7 @@ Light-mode only. No dark mode in Phase 2.
 | Accent (10%) | #2563eb | `bg-blue-600`, `text-blue-600` | Primary Pick buttons only |
 | Destructive | #dc2626 | `text-red-600`, `border-red-200` | Error state text and error container border only |
 
-**Accent reserved for:** The two "Pick this game" primary buttons on the comparison screen, and the submit button on the Username Entry form. Nothing else uses blue. Counter text, labels, and headings are all `text-gray-900` or `text-gray-500`.
+**Accent reserved for:** The two "Pick this game" primary buttons on the comparison screen, the submit button on the Username Entry form, and focus rings on all interactive elements (accessibility — `outline-blue-600`). Nothing else uses blue. Counter text, labels, and headings are all `text-gray-900` or `text-gray-500`.
 
 **Contrast check (pre-declared):**
 - `bg-blue-600` with `text-white` button label: 4.54:1 — passes WCAG AA for normal text.

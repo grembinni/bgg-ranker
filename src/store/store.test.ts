@@ -13,9 +13,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('../api/bggClient', () => ({
   fetchCollection: vi.fn(),
+  bggLogin: vi.fn(),
+  bggRateGame: vi.fn(),
 }))
 
-import { fetchCollection as mockBggFetch } from '../api/bggClient'
+import { fetchCollection as mockBggFetch, bggLogin as mockBggLogin, bggRateGame as mockBggRateGame } from '../api/bggClient'
 import { createAppStore, selectRandomPair, type Game } from './store'
 
 // ---------------------------------------------------------------------------
@@ -72,6 +74,8 @@ function makeRatings(n: number): Record<string, number> {
 
 beforeEach(() => {
   vi.mocked(mockBggFetch).mockReset()
+  vi.mocked(mockBggLogin).mockReset()
+  vi.mocked(mockBggRateGame).mockReset()
 })
 
 // ---------------------------------------------------------------------------
@@ -523,5 +527,328 @@ describe('partialize / persist guard (PERSIST-01, AUTH-03)', () => {
     expect('loadingMessage' in persistedState).toBe(false)
     expect('errorMessage' in persistedState).toBe(false)
     expect('sessionComparisons' in persistedState).toBe(false)
+  })
+})
+
+// ===========================================================================
+// Phase 3: Auth & BGG Sync — RED tests
+// All tests below expect failures until 03-02 through 03-04 implement these features.
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// login action (AUTH-01)
+// ---------------------------------------------------------------------------
+
+describe('login action (AUTH-01)', () => {
+  it('login() sets sessionId in store state (AUTH-01)', async () => {
+    vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'test-session-123' })
+    vi.mocked(mockBggFetch).mockResolvedValueOnce([
+      { id: 'g0', name: 'Game', yearPublished: 2020, thumbnail: '' },
+    ])
+
+    const store = createAppStore(createMockStorage())
+    await store.getState().login('alice', 'password')
+
+    expect((store.getState() as Record<string, unknown>).sessionId).toBe('test-session-123')
+  })
+
+  it('sessionId is absent from the partialize output written to storage (AUTH-03)', async () => {
+    vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'test-session-123' })
+    vi.mocked(mockBggFetch).mockResolvedValueOnce([
+      { id: 'g0', name: 'Game', yearPublished: 2020, thumbnail: '' },
+    ])
+
+    const storage = createMockStorage()
+    const store = createAppStore(storage)
+    await store.getState().login('alice', 'password')
+
+    const dump = storage._dump()
+    const persistKey = 'bgg-ranker:v1:collection-and-rankings'
+    const parsed = JSON.parse(dump[persistKey] ?? '{"state":{}}') as { state: Record<string, unknown> }
+    expect('sessionId' in parsed.state).toBe(false)
+  })
+
+  it('login() sets view to "loading" during execution (AUTH-01)', async () => {
+    let capturedView: string | undefined
+    vi.mocked(mockBggLogin).mockImplementationOnce(async () => {
+      capturedView = (store.getState() as Record<string, unknown>).view as string
+      return { sessionId: 'session-abc' }
+    })
+    vi.mocked(mockBggFetch).mockResolvedValueOnce([
+      { id: 'g0', name: 'Game', yearPublished: 2020, thumbnail: '' },
+    ])
+
+    const store = createAppStore(createMockStorage())
+    await store.getState().login('alice', 'password')
+
+    expect(capturedView).toBe('loading')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// startSync action (SYNC-01, SYNC-02)
+// ---------------------------------------------------------------------------
+
+describe('startSync action (SYNC-01, SYNC-02)', () => {
+  it('startSync() calls bggRateGame for each game in ratings (SYNC-01)', async () => {
+    vi.mocked(mockBggRateGame).mockResolvedValue(undefined)
+
+    const store = createAppStore(createMockStorage())
+    store.setState({
+      ratings: { g0: 900, g1: 700, g2: 500 },
+      sessionId: 'active-session',
+    } as Parameters<typeof store.setState>[0])
+
+    await store.getState().startSync()
+
+    expect(vi.mocked(mockBggRateGame)).toHaveBeenCalledTimes(3)
+  })
+
+  it('startSync() skips gameIds already in syncedGameIds (SYNC-03 resume anchor)', async () => {
+    vi.mocked(mockBggRateGame).mockResolvedValue(undefined)
+
+    const store = createAppStore(createMockStorage())
+    store.setState({
+      ratings: { g0: 900, g1: 700, g2: 500 },
+      sessionId: 'active-session',
+      syncedGameIds: ['g0'],
+    } as Parameters<typeof store.setState>[0])
+
+    await store.getState().startSync()
+
+    expect(vi.mocked(mockBggRateGame)).toHaveBeenCalledTimes(2)
+    const calledWith = vi.mocked(mockBggRateGame).mock.calls.map(c => c[0])
+    expect(calledWith).not.toContain('g0')
+  })
+
+  it('startSync() increments syncProgress after each successful write (SYNC-02)', async () => {
+    vi.mocked(mockBggRateGame).mockResolvedValue(undefined)
+
+    const store = createAppStore(createMockStorage())
+    store.setState({
+      ratings: { g0: 900, g1: 700 },
+      sessionId: 'active-session',
+      syncedGameIds: [],
+    } as Parameters<typeof store.setState>[0])
+
+    await store.getState().startSync()
+
+    expect((store.getState() as Record<string, unknown>).syncProgress).toBe(2)
+  })
+
+  it('startSync() sets syncStatus to "session-expired" when bggRateGame throws with status 401 (AUTH-03)', async () => {
+    vi.mocked(mockBggRateGame).mockRejectedValueOnce(
+      Object.assign(new Error('401'), { status: 401 })
+    )
+
+    const store = createAppStore(createMockStorage())
+    store.setState({
+      ratings: { g0: 900 },
+      sessionId: 'active-session',
+      syncedGameIds: [],
+    } as Parameters<typeof store.setState>[0])
+
+    await store.getState().startSync()
+
+    expect((store.getState() as Record<string, unknown>).syncStatus).toBe('session-expired')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// markGameSynced action (SYNC-03)
+// ---------------------------------------------------------------------------
+
+describe('markGameSynced action (SYNC-03)', () => {
+  it('markGameSynced("g123") appends "g123" to syncedGameIds (SYNC-03)', () => {
+    const store = createAppStore(createMockStorage())
+    store.setState({ syncedGameIds: ['g0'] } as Parameters<typeof store.setState>[0])
+
+    store.getState().markGameSynced('g123')
+
+    expect((store.getState() as Record<string, unknown>).syncedGameIds).toContain('g123')
+  })
+
+  it('markGameSynced() increments syncProgress (SYNC-03)', () => {
+    const store = createAppStore(createMockStorage())
+    store.setState({ syncProgress: 3, syncedGameIds: [] } as Parameters<typeof store.setState>[0])
+
+    store.getState().markGameSynced('g0')
+
+    expect((store.getState() as Record<string, unknown>).syncProgress).toBe(4)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// completeSyncAll action (SYNC-03)
+// ---------------------------------------------------------------------------
+
+describe('completeSyncAll action (SYNC-03)', () => {
+  it('completeSyncAll() clears syncedGameIds to [] (SYNC-03)', () => {
+    const store = createAppStore(createMockStorage())
+    store.setState({ syncedGameIds: ['g0', 'g1'] } as Parameters<typeof store.setState>[0])
+
+    store.getState().completeSyncAll()
+
+    expect((store.getState() as Record<string, unknown>).syncedGameIds).toEqual([])
+  })
+
+  it('completeSyncAll() sets comparisonsAtLastSync = comparisonsTotal (SYNC-03, D-12)', () => {
+    const store = createAppStore(createMockStorage())
+    store.setState({
+      comparisonsTotal: 42,
+      comparisonsAtLastSync: 0,
+      syncedGameIds: [],
+    } as Parameters<typeof store.setState>[0])
+
+    store.getState().completeSyncAll()
+
+    expect((store.getState() as Record<string, unknown>).comparisonsAtLastSync).toBe(42)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// reAuthAndResume action (AUTH-03)
+// ---------------------------------------------------------------------------
+
+describe('reAuthAndResume action (AUTH-03)', () => {
+  it('reAuthAndResume() calls bggLogin and updates sessionId (AUTH-03)', async () => {
+    vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'new-session-456' })
+    vi.mocked(mockBggRateGame).mockResolvedValue(undefined)
+
+    const store = createAppStore(createMockStorage())
+    store.setState({
+      sessionUsername: 'alice',
+      sessionId: 'old-session',
+      ratings: { g0: 900 },
+      syncedGameIds: ['g0'],
+    } as Parameters<typeof store.setState>[0])
+
+    await store.getState().reAuthAndResume('newpassword')
+
+    expect(vi.mocked(mockBggLogin)).toHaveBeenCalledWith('alice', 'newpassword')
+    expect((store.getState() as Record<string, unknown>).sessionId).toBe('new-session-456')
+  })
+
+  it('reAuthAndResume() resumes sync from last position (syncedGameIds not cleared) (SYNC-03, D-10)', async () => {
+    vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'new-session-456' })
+    vi.mocked(mockBggRateGame).mockResolvedValue(undefined)
+
+    const store = createAppStore(createMockStorage())
+    store.setState({
+      sessionUsername: 'alice',
+      sessionId: 'old-session',
+      ratings: { g0: 900, g1: 700 },
+      syncedGameIds: ['g0'], // g0 already synced; only g1 should be called
+    } as Parameters<typeof store.setState>[0])
+
+    await store.getState().reAuthAndResume('newpassword')
+
+    const calledWith = vi.mocked(mockBggRateGame).mock.calls.map(c => c[0])
+    expect(calledWith).not.toContain('g0')
+    expect(calledWith).toContain('g1')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// cancelSync action
+// ---------------------------------------------------------------------------
+
+describe('cancelSync action', () => {
+  it('cancelSync() sets sessionId to null (loop check aborts)', () => {
+    const store = createAppStore(createMockStorage())
+    store.setState({ sessionId: 'active-session' } as Parameters<typeof store.setState>[0])
+
+    store.getState().cancelSync()
+
+    expect((store.getState() as Record<string, unknown>).sessionId).toBeNull()
+  })
+
+  it('cancelSync() does NOT clear syncedGameIds (preserve for resume per Q2 resolution)', () => {
+    const store = createAppStore(createMockStorage())
+    store.setState({ sessionId: 'active-session', syncedGameIds: ['g0', 'g1'] } as Parameters<typeof store.setState>[0])
+
+    store.getState().cancelSync()
+
+    expect((store.getState() as Record<string, unknown>).syncedGameIds).toEqual(['g0', 'g1'])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// beforeunload predicate (AUTH-02)
+// ---------------------------------------------------------------------------
+
+describe('beforeunload predicate (AUTH-02)', () => {
+  it('comparisonsTotal > comparisonsAtLastSync is true after a pick with comparisonsAtLastSync=0 (AUTH-02)', () => {
+    const store = setupStoreWithGames(makeGames(2), { g0: 900, g1: 500 })
+    store.setState({
+      comparisonsTotal: 0,
+      comparisonsAtLastSync: 0,
+      currentPair: ['g0', 'g1'],
+    } as Parameters<typeof store.setState>[0])
+
+    store.getState().pick('g0', 'g1')
+
+    const state = store.getState() as Record<string, unknown>
+    const comparisonsTotal = state.comparisonsTotal as number
+    const comparisonsAtLastSync = state.comparisonsAtLastSync as number
+    expect(comparisonsTotal > comparisonsAtLastSync).toBe(true)
+  })
+
+  it('comparisonsTotal === comparisonsAtLastSync after completeSyncAll() (AUTH-02, D-12)', () => {
+    const store = createAppStore(createMockStorage())
+    store.setState({
+      comparisonsTotal: 15,
+      comparisonsAtLastSync: 0,
+      syncedGameIds: [],
+    } as Parameters<typeof store.setState>[0])
+
+    store.getState().completeSyncAll()
+
+    const state = store.getState() as Record<string, unknown>
+    expect(state.comparisonsTotal).toBe(state.comparisonsAtLastSync)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// RankingsStateSlice persistence (SYNC-03)
+// ---------------------------------------------------------------------------
+
+describe('RankingsStateSlice persistence (SYNC-03)', () => {
+  it('syncedGameIds and comparisonsAtLastSync are present in partialize output (SYNC-03)', () => {
+    const storage = createMockStorage()
+    const store = createAppStore(storage)
+    store.setState({
+      games: makeGames(2),
+      ratings: { g0: 900, g1: 500 },
+      currentPair: ['g0', 'g1'],
+      syncedGameIds: ['g0'],
+      comparisonsAtLastSync: 5,
+    } as Parameters<typeof store.setState>[0])
+
+    store.getState().pick('g0', 'g1')
+
+    const dump = storage._dump()
+    const persistKey = 'bgg-ranker:v1:collection-and-rankings'
+    const parsed = JSON.parse(dump[persistKey]) as { state: Record<string, unknown> }
+    expect('syncedGameIds' in parsed.state).toBe(true)
+    expect('comparisonsAtLastSync' in parsed.state).toBe(true)
+  })
+
+  it('sessionId is absent from partialize output (belt-and-suspenders, AUTH-03)', () => {
+    const storage = createMockStorage()
+    const store = createAppStore(storage)
+    store.setState({
+      games: makeGames(2),
+      ratings: { g0: 900, g1: 500 },
+      currentPair: ['g0', 'g1'],
+      sessionId: 'should-not-persist',
+    } as Parameters<typeof store.setState>[0])
+
+    store.getState().pick('g0', 'g1')
+
+    const dump = storage._dump()
+    const persistKey = 'bgg-ranker:v1:collection-and-rankings'
+    const parsed = JSON.parse(dump[persistKey]) as { state: Record<string, unknown> }
+    expect('sessionId' in parsed.state).toBe(false)
   })
 })

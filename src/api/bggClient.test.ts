@@ -16,6 +16,8 @@ import {
   mergeCollections,
   poll202Loop,
   fetchCollection,
+  bggLogin,
+  bggRateGame,
   type RawGame,
 } from './bggClient'
 
@@ -30,8 +32,8 @@ function makeCollectionXml(
     .map(
       (i) =>
         `<item objectid="${i.id}" objecttype="thing" subtype="boardgame" collid="123">
-      <name sortindex="1" value="${i.name}"/>
-      <yearpublished value="${i.year}"/>
+      <name sortindex="1">${i.name}</name>
+      <yearpublished>${i.year}</yearpublished>
       <thumbnail>${i.thumbnail ?? '//cf.geekdo-images.com/pic_t.jpg'}</thumbnail>
       <stats><rating value="N/A"/></stats>
       <status own="1"/>
@@ -72,13 +74,13 @@ describe('parseCollectionXml (COLL-01)', () => {
     expect(() => parseCollectionXml(xml)).toThrow(/0 games/)
   })
 
-  it('reads name from @_value attribute not text node (COLL-01)', () => {
+  it('reads name from text node (COLL-01)', () => {
     const xml = makeCollectionXml([{ id: '174430', name: 'Gloomhaven', year: 2017 }])
     const result = parseCollectionXml(xml)
     expect(result[0].name).toBe('Gloomhaven')
   })
 
-  it('reads yearPublished from @_value attribute (COLL-01)', () => {
+  it('reads yearPublished from text node (COLL-01)', () => {
     const xml = makeCollectionXml([{ id: '174430', name: 'Gloomhaven', year: 2017 }])
     const result = parseCollectionXml(xml)
     expect(result[0].yearPublished).toBe(2017)
@@ -274,5 +276,140 @@ describe('fetchCollection (COLL-01, COLL-03)', () => {
 
     expect(hasOwnedQuery).toBe(true)
     expect(hasRatedQuery).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// bggLogin (AUTH-01)
+// ---------------------------------------------------------------------------
+
+describe('bggLogin (AUTH-01)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch', vi.fn())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+  })
+
+  it('resolves {sessionId} when fetch returns 200 with body {sessionId: "abc123"} (AUTH-01)', async () => {
+    const mockFetch = vi.mocked(fetch)
+    mockFetch.mockResolvedValueOnce({
+      status: 200,
+      ok: true,
+      json: async () => ({ sessionId: 'abc123' }),
+    } as Response)
+
+    const result = await bggLogin('testuser', 'testpass')
+    expect(result).toEqual({ sessionId: 'abc123' })
+  })
+
+  it('throws Error containing "BGG login failed" when fetch returns 401 (AUTH-01)', async () => {
+    const mockFetch = vi.mocked(fetch)
+    mockFetch.mockResolvedValueOnce({
+      status: 401,
+      ok: false,
+      json: async () => ({}),
+    } as Response)
+
+    await expect(bggLogin('testuser', 'wrongpass')).rejects.toThrow(/BGG login failed/)
+  })
+
+  it('throws Error containing "no sessionId" when fetch returns 200 with empty body {} (AUTH-01)', async () => {
+    const mockFetch = vi.mocked(fetch)
+    mockFetch.mockResolvedValueOnce({
+      status: 200,
+      ok: true,
+      json: async () => ({}),
+    } as Response)
+
+    await expect(bggLogin('testuser', 'testpass')).rejects.toThrow(/no sessionId/)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// bggRateGame (SYNC-01)
+// ---------------------------------------------------------------------------
+
+describe('bggRateGame (SYNC-01)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch', vi.fn())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+  })
+
+  it('calls fetch with POST to BGG_API_BASE + "/api/geekrating" (SYNC-01)', async () => {
+    const mockFetch = vi.mocked(fetch)
+    mockFetch.mockResolvedValueOnce({ status: 200, ok: true } as Response)
+
+    await bggRateGame('174430', 743, 'session-abc')
+
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    const calledUrl = mockFetch.mock.calls[0][0] as string
+    expect(calledUrl).toContain('/api/geekrating')
+  })
+
+  it('sends X-BGG-Session header equal to the sessionId argument (SYNC-01)', async () => {
+    const mockFetch = vi.mocked(fetch)
+    mockFetch.mockResolvedValueOnce({ status: 200, ok: true } as Response)
+
+    await bggRateGame('174430', 743, 'my-session-id')
+
+    const init = mockFetch.mock.calls[0][1] as RequestInit
+    const headers = init.headers as Record<string, string>
+    expect(headers['X-BGG-Session']).toBe('my-session-id')
+  })
+
+  it('sends ratingInt/100 as the rating field — ratingInt=743 sends rating="7.43" (SYNC-01, D-10)', async () => {
+    const mockFetch = vi.mocked(fetch)
+    mockFetch.mockResolvedValueOnce({ status: 200, ok: true } as Response)
+
+    await bggRateGame('174430', 743, 'session-abc')
+
+    const init = mockFetch.mock.calls[0][1] as RequestInit
+    const bodyStr = init.body as string
+    const params = new URLSearchParams(bodyStr)
+    expect(params.get('rating')).toBe('7.43')
+  })
+
+  it('sends objectid=gameId and objecttype=thing as form fields (SYNC-01)', async () => {
+    const mockFetch = vi.mocked(fetch)
+    mockFetch.mockResolvedValueOnce({ status: 200, ok: true } as Response)
+
+    await bggRateGame('174430', 743, 'session-abc')
+
+    const init = mockFetch.mock.calls[0][1] as RequestInit
+    const bodyStr = init.body as string
+    const params = new URLSearchParams(bodyStr)
+    expect(params.get('objectid')).toBe('174430')
+    expect(params.get('objecttype')).toBe('thing')
+  })
+
+  it('resolves (void) on 200 OK (SYNC-01)', async () => {
+    const mockFetch = vi.mocked(fetch)
+    mockFetch.mockResolvedValueOnce({ status: 200, ok: true } as Response)
+
+    const result = await bggRateGame('174430', 743, 'session-abc')
+    expect(result).toBeUndefined()
+  })
+
+  it('throws with .status===401 when fetch returns 401 (SYNC-01, D-18)', async () => {
+    const mockFetch = vi.mocked(fetch)
+    mockFetch.mockResolvedValueOnce({ status: 401, ok: false } as Response)
+
+    await expect(bggRateGame('174430', 743, 'session-abc')).rejects.toMatchObject({ status: 401 })
+  })
+
+  it('throws with .status===500 when fetch returns 500 (SYNC-01)', async () => {
+    const mockFetch = vi.mocked(fetch)
+    mockFetch.mockResolvedValueOnce({ status: 500, ok: false } as Response)
+
+    await expect(bggRateGame('174430', 743, 'session-abc')).rejects.toMatchObject({ status: 500 })
   })
 })

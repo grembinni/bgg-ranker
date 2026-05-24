@@ -162,7 +162,15 @@ export async function fetchCollection(username: string): Promise<RawGame[]> {
   ])
 
   const owned = parseCollectionXml(ownedXml)
-  const ratedUnowned = parseCollectionXml(ratedXml)
+
+  // An empty rated-unowned result is valid — user may not have rated any unowned games.
+  // Catch the 0-game throw from the secondary query only; owned-query errors still propagate.
+  let ratedUnowned: RawGame[]
+  try {
+    ratedUnowned = parseCollectionXml(ratedXml)
+  } catch {
+    ratedUnowned = []
+  }
 
   return mergeCollections(owned, ratedUnowned)
 }

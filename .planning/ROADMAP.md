@@ -83,7 +83,18 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. If sync is interrupted (page reload, session expiry), the next sync attempt resumes from the last successful write — already-synced games are not re-sent
   4. If the BGG session expires mid-sync (401), the app pauses, prompts for password re-entry, then continues from the last successful write
   5. If the user has made comparisons since the last sync and attempts to close the tab, the browser shows an "unsaved changes" warning
-**Plans:** TBD
+**Plans:** 4 plans
+
+**Wave 1**
+- [ ] 03-01-PLAN.md — Wave 0 RED test scaffolds (bggLogin, bggRateGame, store Phase 3 actions, partialize assertions)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 03-02-PLAN.md — Core infrastructure: Vite proxy login rewrite + bggLogin + bggRateGame + store slice extensions + all sync actions
+
+**Wave 3** *(blocked on Wave 2 completion — 03-03 and 03-04 run in parallel)*
+- [ ] 03-03-PLAN.md — Auth UI slice: UsernameEntry password field + login() wiring + beforeunload guard in App.tsx
+- [ ] 03-04-PLAN.md — Sync UI slice: SyncingView + ComparisonView Sync button + App.tsx SyncingView branch
+
 **UI hint:** yes
 
 ### Phase 4: Display Polish
@@ -126,6 +137,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Foundation | 4/4 | ✅ Complete | 2026-05-23 |
 | 2. Collection & Ranking | 3/3 | ✅ Complete | 2026-05-23 |
-| 3. Auth & BGG Sync | 0/TBD | Not started | - |
+| 3. Auth & BGG Sync | 0/4 | In progress | - |
 | 4. Display Polish | 0/TBD | Not started | - |
 | 5. Firebase Production Deploy | 0/1 | Not started | - |

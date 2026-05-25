@@ -8,7 +8,10 @@
 
 import { XMLParser } from 'fast-xml-parser'
 
-export const BGG_API_BASE = import.meta.env.VITE_BGG_API_BASE as string
+export const BGG_API_BASE: string = import.meta.env.VITE_BGG_API_BASE ?? ''
+if (import.meta.env.DEV && !BGG_API_BASE) {
+  console.warn('[bggClient] VITE_BGG_API_BASE is not set — all API calls will fail')
+}
 
 // ---------------------------------------------------------------------------
 // Constants

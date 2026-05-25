@@ -18,6 +18,7 @@ export default function SyncingView() {
   const syncProgress = useStore((s) => s.syncProgress)
   const syncTotal = useStore((s) => s.syncTotal)
   const cancelSync = useStore((s) => s.cancelSync)
+  const startSync = useStore((s) => s.startSync)
   const reAuthAndResume = useStore((s) => s.reAuthAndResume)
 
   // T-03-09: password kept in local state only — cleared on unmount; never persisted
@@ -96,13 +97,22 @@ export default function SyncingView() {
       <div className={container}>
         <div className="border border-red-200 rounded-lg p-4 bg-white" role="alert">
           <p className="text-base text-red-600 mb-3">Sync failed. Please try again.</p>
-          <button
-            type="button"
-            onClick={cancelSync}
-            className="px-4 py-1.5 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
-          >
-            Cancel
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => startSync()}
+              className="px-4 py-1.5 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
+            >
+              Try again
+            </button>
+            <button
+              type="button"
+              onClick={cancelSync}
+              className="px-4 py-1.5 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     )

@@ -24,6 +24,7 @@ import '@testing-library/jest-dom'
 
 const mockCancelSync = vi.fn()
 const mockReAuthAndResume = vi.fn()
+const mockStartSync = vi.fn()
 
 let mockSyncStatus: 'idle' | 'syncing' | 'session-expired' | 'error' | 'complete' = 'syncing'
 let mockSyncProgress = 0
@@ -37,6 +38,7 @@ vi.mock('../store/store', () => ({
       syncTotal: mockSyncTotal,
       cancelSync: mockCancelSync,
       reAuthAndResume: mockReAuthAndResume,
+      startSync: mockStartSync,
     }),
 }))
 
@@ -144,10 +146,15 @@ describe('SyncingView — syncStatus error', () => {
     expect(screen.getByText(/sync failed/i)).toBeInTheDocument()
   })
 
-  it('shows a Cancel/Return button that calls cancelSync()', () => {
+  it('shows a "Try again" button that calls startSync()', () => {
     render(<SyncingView />)
-    const btn = screen.getByRole('button', { name: /cancel|return/i })
-    fireEvent.click(btn)
+    fireEvent.click(screen.getByRole('button', { name: /try again/i }))
+    expect(mockStartSync).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows a Cancel button that calls cancelSync()', () => {
+    render(<SyncingView />)
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
     expect(mockCancelSync).toHaveBeenCalledTimes(1)
   })
 })

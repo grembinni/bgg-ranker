@@ -459,6 +459,8 @@ export function createAppStore(rawStorage: StateStorage) {
 
             // Unplayed games sync with null (rating=0 removes the rating from BGG)
             const ratingInt = get().unplayedIds.includes(gameId) ? null : get().ratings[gameId]
+            // Guard: skip games that are dirty but no longer in ratings (evicted between snapshots)
+            if (ratingInt === undefined) continue
             try {
               await bggRateGame(gameId, ratingInt, currentSessionId)
               // Re-check after the async write — user may have cancelled while awaiting

@@ -355,6 +355,7 @@ export function createAppStore(rawStorage: StateStorage) {
         },
 
         async startSync(): Promise<void> {
+          if (get().syncStatus === 'syncing') return  // guard re-entrancy
           const { ratings, sessionId, syncedGameIds } = get()
           if (!sessionId) return
 

@@ -54,8 +54,8 @@ interface RankingsStateSlice {
   comparisonsTotal: number
   rankingsUsername: string | null // PERSIST-02 guard (D-09) — persisted
   version: number
-  syncedGameIds: string[]         // persisted — SYNC-03 resume anchor (D-11, D-14)
-  comparisonsAtLastSync: number   // persisted — beforeunload predicate (D-12, D-14)
+  dirtyGameIds: string[]          // persisted — set of game IDs whose ratings need syncing (D-04)
+  comparisonsAtLastSync: number   // persisted — retained for display/metrics only (D-12, D-14)
   unplayedIds: string[]           // persisted — games marked as not yet played
   // Both start at 0: button disabled until first comparison (Pitfall 5)
 }
@@ -179,7 +179,7 @@ export function createAppStore(rawStorage: StateStorage) {
         comparisonsTotal: 0,
         rankingsUsername: null,
         version: 1,
-        syncedGameIds: [],
+        dirtyGameIds: [],
         comparisonsAtLastSync: 0,
         unplayedIds: [],
         view: 'entry',
@@ -533,9 +533,9 @@ export function createAppStore(rawStorage: StateStorage) {
           comparisonsTotal: state.comparisonsTotal,
           rankingsUsername: state.rankingsUsername,
           version: state.version,
-          // Phase 3 additions — SYNC-03 resume anchor (D-14)
+          // Phase 3.1 dirty tracking — persisted so unsynced games survive page reload (D-04)
           // sessionId is NOT listed here — excluded per AUTH-03, D-13
-          syncedGameIds: state.syncedGameIds,
+          dirtyGameIds: state.dirtyGameIds,
           comparisonsAtLastSync: state.comparisonsAtLastSync,
           unplayedIds: state.unplayedIds,
         }),

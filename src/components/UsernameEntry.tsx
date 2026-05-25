@@ -4,8 +4,10 @@ import { useStore } from '../store/store'
 export default function UsernameEntry() {
   const [input, setInput] = useState<string>('')
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [password, setPassword] = useState<string>('')
+  const [passwordError, setPasswordError] = useState<string | null>(null)
 
-  const fetchCollection = useStore((s) => s.fetchCollection)
+  const login = useStore((s) => s.login)
   const continueSession = useStore((s) => s.continueSession)
   const resetForNewUser = useStore((s) => s.resetForNewUser)
   const sessionUsername = useStore((s) => s.sessionUsername)
@@ -22,23 +24,42 @@ export default function UsernameEntry() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const trimmed = input.trim()
+    const trimmedPassword = password.trim()
+
+    let hasError = false
+
     if (trimmed === '') {
       setValidationError('Username is required.')
-      return
+      hasError = true
+    } else {
+      setValidationError(null)
     }
-    setValidationError(null)
-    fetchCollection(trimmed)
+
+    if (trimmedPassword === '') {
+      setPasswordError('Password is required.')
+      hasError = true
+    } else {
+      setPasswordError(null)
+    }
+
+    if (hasError) return
+
+    login(trimmed, trimmedPassword)
   }
 
   const inputClasses =
     'w-full border border-gray-200 rounded px-3 py-2 text-base' +
     (validationError !== null ? ' border-red-400' : '')
 
+  const passwordInputClasses =
+    'w-full border border-gray-200 rounded px-3 py-2 text-base' +
+    (passwordError !== null ? ' border-red-400' : '')
+
   return (
     <div className="max-w-sm mx-auto px-4 py-12">
       <h1 className="text-2xl font-semibold leading-tight text-gray-900">BGG Ranker</h1>
       <p className="text-base font-normal leading-normal text-gray-700 mt-2">
-        Enter your BGG username to load your collection.
+        Enter your BGG username and password to load your collection and enable sync.
       </p>
 
       <form className="mt-8 flex flex-col gap-4" onSubmit={handleSubmit}>
@@ -53,7 +74,21 @@ export default function UsernameEntry() {
           className={inputClasses}
         />
         {validationError !== null && (
-          <p className="text-sm text-red-600">Username is required.</p>
+          <p className="text-sm text-red-600">{validationError}</p>
+        )}
+        <label htmlFor="bgg-password" className="text-sm font-normal leading-snug text-gray-700">
+          BGG Password
+        </label>
+        <input
+          id="bgg-password"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={passwordInputClasses}
+        />
+        {passwordError !== null && (
+          <p className="text-sm text-red-600">{passwordError}</p>
         )}
         <button
           type="submit"

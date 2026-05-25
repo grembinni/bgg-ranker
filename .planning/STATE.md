@@ -9,28 +9,28 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 ## Current Position
 
-Phase: 3.1 (Sync Repair) — READY TO EXECUTE
-Plan: 0 of 2 in current phase
-Status: Phase 3 complete — Phase 3.1 planned, 2 plans ready
-Last activity: 2026-05-25 — Phase 3.1 planned; sync write-path bugs diagnosed; dirty tracking designed
+Phase: 3.1 (Sync Repair) — IN PROGRESS
+Plan: 1 of 2 in current phase
+Status: Phase 3.1 Plan 01 complete — sync write path fixed; Plan 02 (dirty tracking) next
+Last activity: 2026-05-25 — Phase 3.1 Plan 01 executed; proxy fallback, ajax=1, 1s throttle committed
 
-Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [██████████] Phase 3 complete (4/4 plans) | [░░░░░░░░░░] Phase 3.1 not started | [░░░░░░░░░░] Phase 4 not started
+Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [██████████] Phase 3 complete (4/4 plans) | [█████░░░░░] Phase 3.1 in progress (1/2 plans) | [░░░░░░░░░░] Phase 4 not started
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: ~3 min
+- Total execution time: ~3 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 3.1 | 1 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: —
+- Last 5 plans: 03.1-01 (~3 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -55,6 +55,9 @@ Recent decisions affecting current work:
 - Phase 2: createAppStore return type left implicit (UseBoundStore from create()) for React hook compatibility
 - Phase 2: getRankPosition defined at module scope in GameCard.tsx (avoids re-allocation per render)
 - Phase 2: U+00B7 MIDDLE DOT used in combined counter format per UI-SPEC copywriting contract
+- Phase 3.1: Proxy fallback uses minimal `SessionID=<value>` cookie (sufficient for geekrating endpoint without full 3-cookie string)
+- Phase 3.1: bggRateGame error body capped at 200 chars in console.error (dev-only, no PII)
+- Phase 3.1: startSync delay fixed at 1000ms (replaces random 200-500ms for deterministic pacing)
 
 ### Pending Todos
 
@@ -80,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-24
-Stopped at: Phase 3 execution complete — verification passed, advancing to Phase 4
-Resume file: .planning/phases/ (start with /gsd:discuss-phase 4 to plan Display Polish)
+Last session: 2026-05-25
+Stopped at: Phase 3.1 Plan 01 complete — sync write path fixed (proxy fallback, ajax=1, 1s throttle)
+Resume file: .planning/phases/03.1-sync-repair/03.1-02-PLAN.md (dirty tracking plan)

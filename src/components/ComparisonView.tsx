@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useStore } from '../store/store'
 import GameCard from './GameCard'
 
@@ -16,8 +17,15 @@ export default function ComparisonView() {
   const showRankedList = useStore(s => s.showRankedList)
   const showUnplayedList = useStore(s => s.showUnplayedList)
   const sessionId = useStore(s => s.sessionId)
+  const lastUpset = useStore(s => s.lastUpset)
+  const logout = useStore(s => s.logout)
 
   const syncDisabled = !sessionId || dirtyGameIds.length === 0
+
+  const [menuOpen, setMenuOpen] = useState(false)
+  const handleSync = () => { setMenuOpen(false); startSync() }
+  const handleRefresh = () => { setMenuOpen(false); refresh() }
+  const handleLogout = () => { setMenuOpen(false); logout() }
 
   if (currentPair === null) {
     return (
@@ -32,16 +40,44 @@ export default function ComparisonView() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <header className="flex justify-between items-center mb-8 text-base text-gray-700">
-        <span>{sessionUsername}</span>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setMenuOpen(o => !o)}
+            className="px-3 py-1.5 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
+            aria-label="Menu"
+          >
+            ☰
+          </button>
+          {menuOpen && (
+            <div className="absolute left-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded shadow-sm z-10 flex flex-col">
+              <button
+                type="button"
+                onClick={handleSync}
+                disabled={syncDisabled}
+                className="px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Sync to BGG
+              </button>
+              <button
+                type="button"
+                onClick={handleRefresh}
+                className="px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-50"
+              >
+                Refresh rankings
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-50"
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
         <span>{sessionComparisons} this session · {comparisonsTotal} total</span>
-        <button
-          type="button"
-          onClick={startSync}
-          disabled={syncDisabled}
-          className="px-4 py-1.5 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Sync to BGG
-        </button>
+        <span>{sessionUsername}</span>
       </header>
       <div className="grid grid-cols-2 gap-6">
         <GameCard
@@ -55,6 +91,11 @@ export default function ComparisonView() {
           onMarkUnplayed={() => markUnplayed(rightId)}
         />
       </div>
+      {lastUpset !== null && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded px-4 py-2 text-center text-sm mt-4">
+          {lastUpset.winnerName} moved up {lastUpset.spotsGained} {lastUpset.spotsGained === 1 ? 'spot' : 'spots'}
+        </div>
+      )}
       <div className="flex gap-4 justify-center mt-8">
         <button
           type="button"
@@ -62,13 +103,6 @@ export default function ComparisonView() {
           className="px-6 py-2 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
         >
           Skip
-        </button>
-        <button
-          type="button"
-          onClick={refresh}
-          className="px-6 py-2 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
-        >
-          Refresh
         </button>
         <button
           type="button"

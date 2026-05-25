@@ -77,20 +77,23 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('ComparisonView Sync to BGG button (SYNC-01, SYNC-02, D-05, D-08)', () => {
-  it('renders "Sync to BGG" button in the header', () => {
+  it('renders "Sync to BGG" button in the hamburger dropdown', () => {
     render(<ComparisonView />)
+    fireEvent.click(screen.getByRole('button', { name: /menu/i }))
     expect(screen.getByRole('button', { name: /sync to bgg/i })).toBeInTheDocument()
   })
 
   it('Sync to BGG button is always rendered regardless of disabled state', () => {
     mockDirtyGameIds = [] // would be disabled
     render(<ComparisonView />)
+    fireEvent.click(screen.getByRole('button', { name: /menu/i }))
     expect(screen.getByRole('button', { name: /sync to bgg/i })).toBeInTheDocument()
   })
 
   it('Sync to BGG button is enabled when dirtyGameIds is non-empty (D-08)', () => {
     mockDirtyGameIds = ['g0', 'g1']
     render(<ComparisonView />)
+    fireEvent.click(screen.getByRole('button', { name: /menu/i }))
     const btn = screen.getByRole('button', { name: /sync to bgg/i })
     expect(btn).not.toBeDisabled()
   })
@@ -98,6 +101,7 @@ describe('ComparisonView Sync to BGG button (SYNC-01, SYNC-02, D-05, D-08)', () 
   it('Sync to BGG button is disabled when dirtyGameIds is empty (D-08)', () => {
     mockDirtyGameIds = []
     render(<ComparisonView />)
+    fireEvent.click(screen.getByRole('button', { name: /menu/i }))
     const btn = screen.getByRole('button', { name: /sync to bgg/i })
     expect(btn).toBeDisabled()
   })
@@ -106,6 +110,7 @@ describe('ComparisonView Sync to BGG button (SYNC-01, SYNC-02, D-05, D-08)', () 
     mockSessionId = null
     mockDirtyGameIds = ['g0']
     render(<ComparisonView />)
+    fireEvent.click(screen.getByRole('button', { name: /menu/i }))
     const btn = screen.getByRole('button', { name: /sync to bgg/i })
     expect(btn).toBeDisabled()
   })
@@ -113,6 +118,7 @@ describe('ComparisonView Sync to BGG button (SYNC-01, SYNC-02, D-05, D-08)', () 
   it('clicking Sync to BGG button calls startSync() (SYNC-01)', () => {
     mockDirtyGameIds = ['g0']
     render(<ComparisonView />)
+    fireEvent.click(screen.getByRole('button', { name: /menu/i }))
     fireEvent.click(screen.getByRole('button', { name: /sync to bgg/i }))
     expect(mockStartSync).toHaveBeenCalledTimes(1)
   })

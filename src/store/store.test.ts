@@ -99,11 +99,11 @@ function setupStoreWithGames(
 describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
   it('calls initializeRankings and seeds integer ratings on first load for this user (RANK-01)', async () => {
     vi.mocked(mockBggFetch).mockResolvedValueOnce([
-      { id: 'g0', name: 'A', yearPublished: 2020, thumbnail: '' },
-      { id: 'g1', name: 'B', yearPublished: 2021, thumbnail: '' },
-      { id: 'g2', name: 'C', yearPublished: 2022, thumbnail: '' },
-      { id: 'g3', name: 'D', yearPublished: 2023, thumbnail: '' },
-      { id: 'g4', name: 'E', yearPublished: 2024, thumbnail: '' },
+      { id: 'g0', name: 'A', yearPublished: 2020, thumbnail: '', userRating: null },
+      { id: 'g1', name: 'B', yearPublished: 2021, thumbnail: '', userRating: null },
+      { id: 'g2', name: 'C', yearPublished: 2022, thumbnail: '', userRating: null },
+      { id: 'g3', name: 'D', yearPublished: 2023, thumbnail: '', userRating: null },
+      { id: 'g4', name: 'E', yearPublished: 2024, thumbnail: '', userRating: null },
     ])
 
     const store = createAppStore(createMockStorage())
@@ -142,9 +142,9 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
 
   it('discards stored rankings and reseeds when entered username differs from rankingsUsername (PERSIST-02)', async () => {
     vi.mocked(mockBggFetch).mockResolvedValueOnce([
-      { id: 'new0', name: 'New Game 0', yearPublished: 2020, thumbnail: '' },
-      { id: 'new1', name: 'New Game 1', yearPublished: 2021, thumbnail: '' },
-      { id: 'new2', name: 'New Game 2', yearPublished: 2022, thumbnail: '' },
+      { id: 'new0', name: 'New Game 0', yearPublished: 2020, thumbnail: '', userRating: null },
+      { id: 'new1', name: 'New Game 1', yearPublished: 2021, thumbnail: '', userRating: null },
+      { id: 'new2', name: 'New Game 2', yearPublished: 2022, thumbnail: '', userRating: null },
     ])
 
     const store = createAppStore(createMockStorage())
@@ -157,7 +157,7 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
     await store.getState().fetchCollection('alice')
 
     expect(vi.mocked(mockBggFetch)).toHaveBeenCalledTimes(1)
-    expect(vi.mocked(mockBggFetch)).toHaveBeenCalledWith('alice')
+    expect(vi.mocked(mockBggFetch)).toHaveBeenCalledWith('alice', undefined)
 
     const state = store.getState()
     expect(state.rankingsUsername).toBe('alice')
@@ -171,6 +171,7 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
       name: `Game ${i}`,
       yearPublished: 2000,
       thumbnail: '',
+      userRating: null,
     }))
     vi.mocked(mockBggFetch).mockResolvedValueOnce(manyGames)
 
@@ -205,13 +206,13 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
 
   it('percent-encoding is delegated to bggClient — store passes raw username (T-02-01)', async () => {
     vi.mocked(mockBggFetch).mockResolvedValueOnce([
-      { id: 'g0', name: 'Game', yearPublished: 2020, thumbnail: '' },
+      { id: 'g0', name: 'Game', yearPublished: 2020, thumbnail: '', userRating: null },
     ])
 
     const store = createAppStore(createMockStorage())
     await store.getState().fetchCollection('user with spaces')
 
-    expect(vi.mocked(mockBggFetch)).toHaveBeenCalledWith('user with spaces')
+    expect(vi.mocked(mockBggFetch)).toHaveBeenCalledWith('user with spaces', undefined)
   })
 })
 
@@ -543,7 +544,7 @@ describe('login action (AUTH-01)', () => {
   it('login() sets sessionId in store state (AUTH-01)', async () => {
     vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'test-session-123' })
     vi.mocked(mockBggFetch).mockResolvedValueOnce([
-      { id: 'g0', name: 'Game', yearPublished: 2020, thumbnail: '' },
+      { id: 'g0', name: 'Game', yearPublished: 2020, thumbnail: '', userRating: null },
     ])
 
     const store = createAppStore(createMockStorage())
@@ -555,7 +556,7 @@ describe('login action (AUTH-01)', () => {
   it('sessionId is absent from the partialize output written to storage (AUTH-03)', async () => {
     vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'test-session-123' })
     vi.mocked(mockBggFetch).mockResolvedValueOnce([
-      { id: 'g0', name: 'Game', yearPublished: 2020, thumbnail: '' },
+      { id: 'g0', name: 'Game', yearPublished: 2020, thumbnail: '', userRating: null },
     ])
 
     const storage = createMockStorage()
@@ -575,7 +576,7 @@ describe('login action (AUTH-01)', () => {
       return { sessionId: 'session-abc' }
     })
     vi.mocked(mockBggFetch).mockResolvedValueOnce([
-      { id: 'g0', name: 'Game', yearPublished: 2020, thumbnail: '' },
+      { id: 'g0', name: 'Game', yearPublished: 2020, thumbnail: '', userRating: null },
     ])
 
     const store = createAppStore(createMockStorage())

@@ -7,11 +7,19 @@ export default function ComparisonView() {
   const comparisonsTotal = useStore(s => s.comparisonsTotal)
   const comparisonsAtLastSync = useStore(s => s.comparisonsAtLastSync)
   const sessionUsername = useStore(s => s.sessionUsername)
+  const syncedGameIds = useStore(s => s.syncedGameIds)
+  const unplayedIds = useStore(s => s.unplayedIds)
   const pick = useStore(s => s.pick)
   const skip = useStore(s => s.skip)
   const refresh = useStore(s => s.refresh)
   const startSync = useStore(s => s.startSync)
+  const markUnplayed = useStore(s => s.markUnplayed)
+  const showRankedList = useStore(s => s.showRankedList)
+  const showUnplayedList = useStore(s => s.showUnplayedList)
   const sessionId = useStore(s => s.sessionId)
+
+  const hasUnsyncedUnplayed = unplayedIds.some(id => !syncedGameIds.includes(id))
+  const syncDisabled = !sessionId || (comparisonsTotal === comparisonsAtLastSync && !hasUnsyncedUnplayed)
 
   if (currentPair === null) {
     return (
@@ -31,15 +39,23 @@ export default function ComparisonView() {
         <button
           type="button"
           onClick={startSync}
-          disabled={!sessionId || comparisonsTotal === comparisonsAtLastSync}
+          disabled={syncDisabled}
           className="px-4 py-1.5 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Sync to BGG
         </button>
       </header>
       <div className="grid grid-cols-2 gap-6">
-        <GameCard gameId={leftId} onPick={() => pick(leftId, rightId)} />
-        <GameCard gameId={rightId} onPick={() => pick(rightId, leftId)} />
+        <GameCard
+          gameId={leftId}
+          onPick={() => pick(leftId, rightId)}
+          onMarkUnplayed={() => markUnplayed(leftId)}
+        />
+        <GameCard
+          gameId={rightId}
+          onPick={() => pick(rightId, leftId)}
+          onMarkUnplayed={() => markUnplayed(rightId)}
+        />
       </div>
       <div className="flex gap-4 justify-center mt-8">
         <button
@@ -55,6 +71,20 @@ export default function ComparisonView() {
           className="px-6 py-2 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
         >
           Refresh
+        </button>
+        <button
+          type="button"
+          onClick={showRankedList}
+          className="px-6 py-2 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
+        >
+          Ranked list
+        </button>
+        <button
+          type="button"
+          onClick={showUnplayedList}
+          className="px-6 py-2 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
+        >
+          Unplayed ({unplayedIds.length})
         </button>
       </div>
     </div>

@@ -32,6 +32,7 @@ export interface Game {
   name: string
   yearPublished: number
   thumbnail: string
+  userRating?: number | null  // BGG personal rating at time of fetch; optional for localStorage compat
 }
 
 // ---------------------------------------------------------------------------
@@ -55,11 +56,12 @@ interface RankingsStateSlice {
   version: number
   syncedGameIds: string[]         // persisted — SYNC-03 resume anchor (D-11, D-14)
   comparisonsAtLastSync: number   // persisted — beforeunload predicate (D-12, D-14)
+  unplayedIds: string[]           // persisted — games marked as not yet played
   // Both start at 0: button disabled until first comparison (Pitfall 5)
 }
 
 interface ComparisonStateSlice {
-  view: 'entry' | 'loading' | 'comparison' | 'error' | 'syncing'
+  view: 'entry' | 'loading' | 'comparison' | 'error' | 'syncing' | 'ranked-list' | 'unplayed-list'
   currentPair: [string, string] | null
   sessionComparisons: number
   skipQueue: Array<[string, string]>
@@ -78,6 +80,10 @@ interface AppActions {
   pick(winnerId: string, loserId: string): void
   skip(): void
   refresh(): void
+  markUnplayed(gameId: string): void
+  showRankedList(): void
+  showUnplayedList(): void
+  backToComparison(): void
   // Phase 3 actions (D-16)
   login(username: string, password: string): Promise<void>
   startSync(): Promise<void>
@@ -173,6 +179,7 @@ export function createAppStore(rawStorage: StateStorage) {
         version: 1,
         syncedGameIds: [],
         comparisonsAtLastSync: 0,
+        unplayedIds: [],
         view: 'entry',
         currentPair: null,
         sessionComparisons: 0,
@@ -212,7 +219,7 @@ export function createAppStore(rawStorage: StateStorage) {
           })
 
           try {
-            const games: RawGame[] = await bggFetchCollection(username)
+            const games: RawGame[] = await bggFetchCollection(username, get().sessionId ?? undefined)
 
             // Capacity check — surface user-friendly error before any state mutation
             try {
@@ -239,11 +246,19 @@ export function createAppStore(rawStorage: StateStorage) {
                 name: g.name,
                 yearPublished: g.yearPublished,
                 thumbnail: g.thumbnail,
+                userRating: g.userRating,
               }
             }
 
-            // Initialize ratings (integer-internal per D-17)
-            const ratings = initializeRankings(games.map((g) => g.id))
+            // Seed from BGG ratings: rated games descending, unrated shuffled after
+            const ratedGames = games
+              .filter(g => g.userRating !== null)
+              .sort((a, b) => (b.userRating ?? 0) - (a.userRating ?? 0))
+            const unratedGames = games
+              .filter(g => g.userRating === null)
+              .sort(() => Math.random() - 0.5)
+            const orderedIds = [...ratedGames, ...unratedGames].map(g => g.id)
+            const ratings = initializeRankings(orderedIds, undefined, true)
 
             // Compute first pair
             const firstPair = selectRandomPair(ratings, [])
@@ -308,6 +323,8 @@ export function createAppStore(rawStorage: StateStorage) {
             errorMessage: null,
             loadingMessage: null,
             lastFetched: null,
+            unplayedIds: [],
+            syncedGameIds: [],
           })
         },
 
@@ -344,6 +361,25 @@ export function createAppStore(rawStorage: StateStorage) {
           })
         },
 
+        markUnplayed(gameId: string): void {
+          const { ratings, unplayedIds, skipQueue, syncedGameIds } = get()
+          const newRatings = { ...ratings }
+          delete newRatings[gameId]
+          const newQueue = skipQueue.filter(([a, b]) => a !== gameId && b !== gameId)
+          set({
+            ratings: newRatings,
+            unplayedIds: [...unplayedIds, gameId],
+            // Remove from synced so next sync sends rating=0 for this game
+            syncedGameIds: syncedGameIds.filter(id => id !== gameId),
+            skipQueue: newQueue,
+            currentPair: selectRandomPair(newRatings, newQueue),
+          })
+        },
+
+        showRankedList(): void { set({ view: 'ranked-list' }) },
+        showUnplayedList(): void { set({ view: 'unplayed-list' }) },
+        backToComparison(): void { set({ view: 'comparison' }) },
+
         // --- Phase 3 actions (D-16) ---
 
         async login(username: string, password: string): Promise<void> {
@@ -365,10 +401,12 @@ export function createAppStore(rawStorage: StateStorage) {
 
         async startSync(): Promise<void> {
           if (get().syncStatus === 'syncing') return  // guard re-entrancy
-          const { ratings, sessionId, syncedGameIds } = get()
+          const { ratings, sessionId, syncedGameIds, unplayedIds } = get()
           if (!sessionId) return
 
-          const allIds = Object.keys(ratings)
+          const ratedIds = Object.keys(ratings)
+          // allIds = rated games + unplayed games (unplayed sync with rating=0)
+          const allIds = [...ratedIds, ...unplayedIds]
           const toSync = allIds.filter(id => !syncedGameIds.includes(id))
 
           set({
@@ -383,8 +421,10 @@ export function createAppStore(rawStorage: StateStorage) {
             const currentSessionId = get().sessionId
             if (!currentSessionId) return
 
+            // Unplayed games sync with null (rating=0 removes the rating from BGG)
+            const ratingInt = get().unplayedIds.includes(gameId) ? null : get().ratings[gameId]
             try {
-              await bggRateGame(gameId, get().ratings[gameId], currentSessionId)
+              await bggRateGame(gameId, ratingInt, currentSessionId)
               // Re-check after the async write — user may have cancelled while awaiting
               if (!get().sessionId) return
               get().markGameSynced(gameId)
@@ -468,6 +508,7 @@ export function createAppStore(rawStorage: StateStorage) {
           // sessionId is NOT listed here — excluded per AUTH-03, D-13
           syncedGameIds: state.syncedGameIds,
           comparisonsAtLastSync: state.comparisonsAtLastSync,
+          unplayedIds: state.unplayedIds,
         }),
       }
     )

@@ -232,11 +232,12 @@ export function redistribute(
  */
 export function initializeRankings(
   gameIds: string[],
-  weights: readonly number[] = TIER_WEIGHTS
+  weights: readonly number[] = TIER_WEIGHTS,
+  sorted = false
 ): Record<string, number> {
   validateTierCapacity(gameIds.length)
-  // Shuffle for random initial positions — non-cryptographic (T-02-02, acceptable)
-  const shuffled = [...gameIds].sort(() => Math.random() - 0.5)
-  const allocations = computeTierAllocations(shuffled.length, weights)
-  return assignRatings(shuffled, allocations)
+  // When sorted=true the caller has pre-ordered gameIds (best→worst); skip the shuffle.
+  const ordered = sorted ? [...gameIds] : [...gameIds].sort(() => Math.random() - 0.5)
+  const allocations = computeTierAllocations(ordered.length, weights)
+  return assignRatings(ordered, allocations)
 }

@@ -60,6 +60,7 @@ describe('parseCollectionXml (COLL-01)', () => {
       name: 'Gloomhaven',
       yearPublished: 2017,
       thumbnail: '//cf.geekdo-images.com/.../pic2437871_t.jpg',
+      userRating: null,
     })
   })
 
@@ -94,16 +95,16 @@ describe('parseCollectionXml (COLL-01)', () => {
 
 describe('mergeCollections (COLL-03)', () => {
   it('owned entry wins when same objectid appears in both arrays (COLL-03)', () => {
-    const owned: RawGame[] = [{ id: '100', name: 'Owned Name', yearPublished: 2020, thumbnail: 'owned.jpg' }]
-    const ratedUnowned: RawGame[] = [{ id: '100', name: 'Rated Name', yearPublished: 2020, thumbnail: 'rated.jpg' }]
+    const owned: RawGame[] = [{ id: '100', name: 'Owned Name', yearPublished: 2020, thumbnail: 'owned.jpg', userRating: null }]
+    const ratedUnowned: RawGame[] = [{ id: '100', name: 'Rated Name', yearPublished: 2020, thumbnail: 'rated.jpg', userRating: null }]
     const merged = mergeCollections(owned, ratedUnowned)
     expect(merged.length).toBe(1)
     expect(merged[0].name).toBe('Owned Name')
   })
 
   it('non-duplicate rated-unowned games are appended to owned (COLL-03)', () => {
-    const owned: RawGame[] = [{ id: '1', name: 'Game One', yearPublished: 2020, thumbnail: '' }]
-    const ratedUnowned: RawGame[] = [{ id: '2', name: 'Game Two', yearPublished: 2021, thumbnail: '' }]
+    const owned: RawGame[] = [{ id: '1', name: 'Game One', yearPublished: 2020, thumbnail: '', userRating: null }]
+    const ratedUnowned: RawGame[] = [{ id: '2', name: 'Game Two', yearPublished: 2021, thumbnail: '', userRating: null }]
     const merged = mergeCollections(owned, ratedUnowned)
     expect(merged.length).toBe(2)
     expect(merged.map((g) => g.id)).toEqual(['1', '2'])
@@ -111,8 +112,8 @@ describe('mergeCollections (COLL-03)', () => {
 
   it('logs debug note via console.debug when duplicate found (COLL-03)', () => {
     const spy = vi.spyOn(console, 'debug').mockImplementation(() => {})
-    const owned: RawGame[] = [{ id: '100', name: 'Owned Name', yearPublished: 2020, thumbnail: '' }]
-    const ratedUnowned: RawGame[] = [{ id: '100', name: 'Rated Name', yearPublished: 2020, thumbnail: '' }]
+    const owned: RawGame[] = [{ id: '100', name: 'Owned Name', yearPublished: 2020, thumbnail: '', userRating: null }]
+    const ratedUnowned: RawGame[] = [{ id: '100', name: 'Rated Name', yearPublished: 2020, thumbnail: '', userRating: null }]
     mergeCollections(owned, ratedUnowned)
     expect(spy).toHaveBeenCalledWith(expect.stringContaining('Duplicate'))
     expect(spy).toHaveBeenCalledWith(expect.stringContaining('100'))

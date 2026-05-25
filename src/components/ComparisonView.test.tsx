@@ -23,6 +23,9 @@ const mockStartSync = vi.fn()
 const mockPick = vi.fn()
 const mockSkip = vi.fn()
 const mockRefresh = vi.fn()
+const mockMarkUnplayed = vi.fn()
+const mockShowRankedList = vi.fn()
+const mockShowUnplayedList = vi.fn()
 
 let mockComparisonsTotal = 5
 let mockComparisonsAtLastSync = 0
@@ -37,10 +40,15 @@ vi.mock('../store/store', () => ({
       comparisonsAtLastSync: mockComparisonsAtLastSync,
       sessionUsername: 'alice',
       sessionId: mockSessionId,
+      syncedGameIds: [],
+      unplayedIds: [],
       startSync: mockStartSync,
       pick: mockPick,
       skip: mockSkip,
       refresh: mockRefresh,
+      markUnplayed: mockMarkUnplayed,
+      showRankedList: mockShowRankedList,
+      showUnplayedList: mockShowUnplayedList,
       games: {
         g0: { id: 'g0', name: 'Game A', yearPublished: 2020, thumbnail: '' },
         g1: { id: 'g1', name: 'Game B', yearPublished: 2021, thumbnail: '' },

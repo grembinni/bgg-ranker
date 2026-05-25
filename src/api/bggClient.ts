@@ -29,6 +29,7 @@ export interface RawGame {
   name: string
   yearPublished: number
   thumbnail: string
+  userRating: number | null  // BGG personal rating (1-10), null if unrated
 }
 
 // ---------------------------------------------------------------------------
@@ -65,11 +66,21 @@ export function parseCollectionXml(xmlText: string): RawGame[] {
     .map((item) => {
       const it = item as Record<string, unknown>
       const nameEl = it['name'] as Record<string, unknown> | undefined
+      const statsEl = it['stats'] as Record<string, unknown> | undefined
+      const ratingEl = statsEl?.['rating'] as Record<string, unknown> | undefined
+      const ratingVal = ratingEl?.['@_value']
+      const userRating =
+        typeof ratingVal === 'number'
+          ? ratingVal
+          : typeof ratingVal === 'string' && ratingVal !== 'N/A'
+            ? parseFloat(ratingVal)
+            : null
       return {
         id: String(it['@_objectid'] ?? ''),
         name: String(nameEl?.['#text'] ?? ''),
         yearPublished: Number(it['yearpublished'] ?? 0),
         thumbnail: String(it['thumbnail'] ?? ''),
+        userRating: userRating !== null && !isNaN(userRating) ? userRating : null,
       }
     })
     .filter((g) => g.id !== '' && g.name !== '')
@@ -115,9 +126,9 @@ export function mergeCollections(owned: RawGame[], ratedUnowned: RawGame[]): Raw
  * @returns XML text body on success
  * @throws Error on timeout, HTTP error, or HTML error page
  */
-export async function poll202Loop(url: string): Promise<string> {
+export async function poll202Loop(url: string, init?: RequestInit): Promise<string> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const res = await fetch(url)
+    const res = await fetch(url, init)
 
     if (res.status === 202) {
       if (attempt === MAX_RETRIES) {
@@ -196,11 +207,11 @@ export async function bggLogin(
  */
 export async function bggRateGame(
   gameId: string,
-  ratingInt: number,
+  ratingInt: number | null,
   sessionId: string
 ): Promise<void> {
-  // Convert integer-internal rating to 2-decimal float at write time only (D-10)
-  const ratingFloat = (ratingInt / 100).toFixed(2)
+  // null → send rating=0 which removes the game's rating from BGG
+  const ratingFloat = ratingInt === null ? '0' : (ratingInt / 100).toFixed(2)
 
   const body = new URLSearchParams({
     objectid: gameId,
@@ -236,15 +247,18 @@ export async function bggRateGame(
  * @returns Merged RawGame[] array
  * @throws Propagates errors from poll202Loop and parseCollectionXml
  */
-export async function fetchCollection(username: string): Promise<RawGame[]> {
+export async function fetchCollection(username: string, sessionId?: string): Promise<RawGame[]> {
   const u = encodeURIComponent(username)
 
   const ownedUrl = `${BGG_API_BASE}/xmlapi2/collection?username=${u}&own=1&subtype=boardgame&excludesubtype=boardgameexpansion&stats=1`
   const ratedUrl = `${BGG_API_BASE}/xmlapi2/collection?username=${u}&rated=1&own=0&subtype=boardgame&excludesubtype=boardgameexpansion&stats=1`
+  const init: RequestInit | undefined = sessionId
+    ? { headers: { 'X-BGG-Session': sessionId } }
+    : undefined
 
   const [ownedXml, ratedXml] = await Promise.all([
-    poll202Loop(ownedUrl),
-    poll202Loop(ratedUrl),
+    poll202Loop(ownedUrl, init),
+    poll202Loop(ratedUrl, init),
   ])
 
   const owned = parseCollectionXml(ownedXml)

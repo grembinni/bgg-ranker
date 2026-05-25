@@ -452,7 +452,8 @@ export function createAppStore(rawStorage: StateStorage) {
             syncTotal: toSync.length,
           })
 
-          for (const gameId of toSync) {
+          for (let i = 0; i < toSync.length; i++) {
+            const gameId = toSync[i]
             // Check per-iteration — cancelSync() sets sessionId=null to abort (Pitfall 4)
             const currentSessionId = get().sessionId
             if (!currentSessionId) return
@@ -478,8 +479,8 @@ export function createAppStore(rawStorage: StateStorage) {
               return
             }
 
-            // Throttle: fixed 1000ms delay between writes (SYNC-02, T-03-05)
-            await delay(1000)
+            // Throttle between writes only — skip after the last game (WR-02)
+            if (i < toSync.length - 1) await delay(1000)
           }
 
           get().completeSyncAll()
@@ -516,6 +517,11 @@ export function createAppStore(rawStorage: StateStorage) {
             const result = await bggLogin(username, password)
             // Reset syncStatus to 'idle' so startSync's re-entrancy guard allows the call
             set({ sessionId: result.sessionId, syncStatus: 'idle' })
+            // Guard: if nothing remains dirty (edge case), go back to comparison view (WR-03)
+            if (get().dirtyGameIds.length === 0) {
+              set({ view: 'comparison' })
+              return
+            }
             // Resume from where sync left off — dirtyGameIds contains remaining un-synced games (D-10)
             await get().startSync()
           } catch {

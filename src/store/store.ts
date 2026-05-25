@@ -81,6 +81,8 @@ interface AppActions {
   skip(): void
   refresh(): void
   markUnplayed(gameId: string): void
+  reorderRankedList(newOrderedIds: string[]): void
+  moveUnplayedToRanked(gameId: string, targetRank: number): void
   showRankedList(): void
   showUnplayedList(): void
   backToComparison(): void
@@ -373,6 +375,33 @@ export function createAppStore(rawStorage: StateStorage) {
             syncedGameIds: syncedGameIds.filter(id => id !== gameId),
             skipQueue: newQueue,
             currentPair: selectRandomPair(newRatings, newQueue),
+          })
+        },
+
+        reorderRankedList(newOrderedIds: string[]): void {
+          const newRatings = initializeRankings(newOrderedIds, undefined, true)
+          set({
+            ratings: newRatings,
+            syncedGameIds: [],
+            // Treat a manual reorder as a comparison so the Sync button activates
+            comparisonsTotal: get().comparisonsTotal + 1,
+          })
+        },
+
+        moveUnplayedToRanked(gameId: string, targetRank: number): void {
+          const { ratings, unplayedIds } = get()
+          if (!unplayedIds.includes(gameId)) return
+          const sorted = Object.entries(ratings)
+            .sort((a, b) => b[1] - a[1])
+            .map(([id]) => id)
+          const insertIdx = Math.max(0, Math.min(targetRank - 1, sorted.length))
+          const newOrder = [...sorted.slice(0, insertIdx), gameId, ...sorted.slice(insertIdx)]
+          const newRatings = initializeRankings(newOrder, undefined, true)
+          set({
+            ratings: newRatings,
+            unplayedIds: unplayedIds.filter(id => id !== gameId),
+            syncedGameIds: [],
+            comparisonsTotal: get().comparisonsTotal + 1,
           })
         },
 

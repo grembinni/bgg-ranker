@@ -9,6 +9,16 @@
 import { XMLParser } from 'fast-xml-parser'
 
 export const BGG_API_BASE: string = import.meta.env.VITE_BGG_API_BASE ?? ''
+
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&#0*39;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+}
 if (import.meta.env.DEV && !BGG_API_BASE) {
   console.warn('[bggClient] VITE_BGG_API_BASE is not set — all API calls will fail')
 }
@@ -77,7 +87,7 @@ export function parseCollectionXml(xmlText: string): RawGame[] {
             : null
       return {
         id: String(it['@_objectid'] ?? ''),
-        name: String(nameEl?.['#text'] ?? ''),
+        name: decodeHtmlEntities(String(nameEl?.['#text'] ?? '')),
         yearPublished: Number(it['yearpublished'] ?? 0),
         thumbnail: String(it['thumbnail'] ?? ''),
         userRating: userRating !== null && !isNaN(userRating) ? userRating : null,

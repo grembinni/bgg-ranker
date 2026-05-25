@@ -21,7 +21,15 @@ export default function GameCard({ gameId, onPick, onMarkUnplayed }: GameCardPro
   const rank = getRankPosition(gameId, ratings)
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col gap-2">
+    <div className="relative bg-white border border-gray-200 rounded-lg p-4 flex flex-col gap-2">
+      <button
+        type="button"
+        onClick={onMarkUnplayed}
+        title="Mark as unplayed"
+        className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center bg-red-500 hover:bg-red-600 active:bg-red-700 text-white text-sm font-bold rounded"
+      >
+        ✕
+      </button>
       {game.thumbnail && (
         <img
           src={game.thumbnail.startsWith('//') ? `https:${game.thumbnail}` : game.thumbnail}
@@ -38,13 +46,6 @@ export default function GameCard({ gameId, onPick, onMarkUnplayed }: GameCardPro
         className="mt-auto w-full min-h-[44px] bg-blue-600 text-white text-base font-semibold rounded px-4 py-2 hover:bg-blue-700 active:bg-blue-800 outline-2 outline-offset-2 outline-blue-600"
       >
         Pick this game
-      </button>
-      <button
-        type="button"
-        onClick={onMarkUnplayed}
-        className="w-full min-h-[36px] border border-gray-200 rounded px-4 py-1.5 text-sm text-gray-500 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
-      >
-        Unplayed
       </button>
     </div>
   )

@@ -22,6 +22,18 @@ export default function SyncingView() {
 
   // T-03-09: password kept in local state only — cleared on unmount; never persisted
   const [reAuthPassword, setReAuthPassword] = useState<string>('')
+  // WR-04: prevent double-submission while re-auth is in flight
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleResume = async () => {
+    if (!reAuthPassword || isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      await reAuthAndResume(reAuthPassword)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   // Shared layout: centered, max-w-sm, matching UsernameEntry proportions
   const container = 'max-w-sm mx-auto px-4 py-12'
@@ -60,10 +72,11 @@ export default function SyncingView() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => reAuthAndResume(reAuthPassword)}
-              className="px-4 py-1.5 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
+              disabled={isSubmitting || !reAuthPassword}
+              onClick={handleResume}
+              className="px-4 py-1.5 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Resume Sync
+              {isSubmitting ? 'Resuming…' : 'Resume Sync'}
             </button>
             <button
               type="button"

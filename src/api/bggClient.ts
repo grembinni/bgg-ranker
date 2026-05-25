@@ -227,6 +227,7 @@ export async function bggRateGame(
     objectid: gameId,
     objecttype: 'thing',
     rating: ratingFloat,
+    ajax: '1',
   })
 
   const res = await fetch(`${BGG_API_BASE}/api/geekrating`, {
@@ -239,6 +240,8 @@ export async function bggRateGame(
   })
 
   if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    console.error(`[bggRateGame] HTTP ${res.status} for game ${gameId}:`, text.slice(0, 200))
     // Attach .status so caller can detect 401 session-expired (D-18, Pattern 2)
     throw Object.assign(new Error('BGG write failed: HTTP ' + res.status), {
       status: res.status,

@@ -402,14 +402,14 @@ describe('bggRateGame (SYNC-01)', () => {
 
   it('throws with .status===401 when fetch returns 401 (SYNC-01, D-18)', async () => {
     const mockFetch = vi.mocked(fetch)
-    mockFetch.mockResolvedValueOnce({ status: 401, ok: false } as Response)
+    mockFetch.mockResolvedValueOnce({ status: 401, ok: false, text: () => Promise.resolve('') } as unknown as Response)
 
     await expect(bggRateGame('174430', 743, 'session-abc')).rejects.toMatchObject({ status: 401 })
   })
 
   it('throws with .status===500 when fetch returns 500 (SYNC-01)', async () => {
     const mockFetch = vi.mocked(fetch)
-    mockFetch.mockResolvedValueOnce({ status: 500, ok: false } as Response)
+    mockFetch.mockResolvedValueOnce({ status: 500, ok: false, text: () => Promise.resolve('') } as unknown as Response)
 
     await expect(bggRateGame('174430', 743, 'session-abc')).rejects.toMatchObject({ status: 500 })
   })

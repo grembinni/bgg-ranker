@@ -26,8 +26,12 @@ Phases 2–4 develop and test against the Vite dev proxy (`/bggapi/*`). All desi
 **Success Criteria:**
   1. During every head-to-head comparison, each game's BGG thumbnail (cover art) is displayed alongside its name — no placeholder or missing image for any game that has a BGG thumbnail
   2. After a user picks a winner that was previously ranked significantly lower than the loser, the app shows a callout (e.g. "Moved up 12 spots") that is visible without scrolling and clears on the next comparison
-**Plans:** TBD
-**UI hint:** yes
+**Plans:** 4 plans
+Plans:
+- [ ] 04-01-PLAN.md — Wave 0: extend existing test files with failing Phase 4 describe blocks (TDD RED phase)
+- [ ] 04-02-PLAN.md — Wave 1a: store extension — lastUpset field, pick() upset detection, login() auto-resume, logout() action
+- [ ] 04-03-PLAN.md — Wave 1b: GameCard upgrade — h-48 thumbnail, BGG page link, gray placeholder, #N rank (DISP-01)
+- [ ] 04-04-PLAN.md — Wave 2: ComparisonView hamburger header + upset callout; UsernameEntry continue-prompt removal
 
 ### Phase 5: Firebase Production Deploy
 **Goal:** Firebase Cloud Function deployed and production CORS proxy operational — the app runs end-to-end in production with no CORS errors
@@ -56,9 +60,9 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 4/4 | ✅ Complete | 2026-05-23 |
-| 2. Collection & Ranking | 3/3 | ✅ Complete | 2026-05-23 |
-| 3. Auth & BGG Sync | 4/4 | ✅ Complete | 2026-05-24 |
-| 3.1. Sync Repair | 2/2 | ✅ Complete | 2026-05-25 |
-| 4. Display Polish | 0/TBD | Not started | - |
+| 1. Foundation | 4/4 | Complete | 2026-05-23 |
+| 2. Collection & Ranking | 3/3 | Complete | 2026-05-23 |
+| 3. Auth & BGG Sync | 4/4 | Complete | 2026-05-24 |
+| 3.1. Sync Repair | 2/2 | Complete | 2026-05-25 |
+| 4. Display Polish | 0/4 | Not started | - |
 | 5. Firebase Production Deploy | 0/1 | Not started | - |

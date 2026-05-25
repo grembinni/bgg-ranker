@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Dev CORS proxy validated, ranking engine proven, Firebase Function source ready
 - [ ] **Phase 2: Collection & Ranking** - User enters their BGG username, fetches their collection, and ranks games locally — no password needed
-- [ ] **Phase 3: Auth & BGG Sync** - User adds their BGG password to sync rankings back to BGG
+- [x] **Phase 3: Auth & BGG Sync** - User adds their BGG password to sync rankings back to BGG
 - [ ] **Phase 4: Display Polish** - Cover art and upset callouts make comparisons visually rich
 - [ ] **Phase 5: Firebase Production Deploy** - Firebase Cloud Function deployed; app runs end-to-end in production
 
@@ -86,14 +86,14 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 4 plans
 
 **Wave 1**
-- [ ] 03-01-PLAN.md — Wave 0 RED test scaffolds (bggLogin, bggRateGame, store Phase 3 actions, partialize assertions)
+- [x] 03-01-PLAN.md — Wave 0 RED test scaffolds (bggLogin, bggRateGame, store Phase 3 actions, partialize assertions)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 03-02-PLAN.md — Core infrastructure: Vite proxy login rewrite + bggLogin + bggRateGame + store slice extensions + all sync actions
+- [x] 03-02-PLAN.md — Core infrastructure: Vite proxy login rewrite + bggLogin + bggRateGame + store slice extensions + all sync actions
 
-**Wave 3** *(blocked on Wave 2 completion — 03-03 and 03-04 run in parallel)*
-- [ ] 03-03-PLAN.md — Auth UI slice: UsernameEntry password field + login() wiring + beforeunload guard in App.tsx
-- [ ] 03-04-PLAN.md — Sync UI slice: SyncingView + ComparisonView Sync button + App.tsx SyncingView branch
+**Wave 3** *(blocked on Wave 2 completion — 03-03 and 03-04 run sequential due to App.tsx overlap)*
+- [x] 03-03-PLAN.md — Auth UI slice: UsernameEntry password field + login() wiring + beforeunload guard in App.tsx
+- [x] 03-04-PLAN.md — Sync UI slice: SyncingView + ComparisonView Sync button + App.tsx SyncingView branch
 
 **Cross-cutting constraints:** Integer-internal ratings (ratingInt/100 only at bggRateGame call site) across Plans 03-02, 03-04; sessionId excluded from partialize across Plans 03-01, 03-02; UI components never call bggClient directly across Plans 03-03, 03-04
 
@@ -137,6 +137,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Foundation | 4/4 | ✅ Complete | 2026-05-23 |
 | 2. Collection & Ranking | 3/3 | ✅ Complete | 2026-05-23 |
-| 3. Auth & BGG Sync | 0/4 | In progress | - |
+| 3. Auth & BGG Sync | 4/4 | ✅ Complete | 2026-05-24 |
 | 4. Display Polish | 0/TBD | Not started | - |
 | 5. Firebase Production Deploy | 0/1 | Not started | - |

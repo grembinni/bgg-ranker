@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-05-22)
 
 **Core value:** The user can always tell which of any two games they actually prefer, and the ranking list accurately reflects that — not BGG's community scores, not gut-feel star ratings.
-**Current focus:** Phase 3 — Auth & BGG Sync (Phase 2 complete)
+**Current focus:** Phase 4 — Display Polish (Phase 3 complete)
 
 ## Current Position
 
-Phase: 3 of 5 (Auth & BGG Sync) — READY TO EXECUTE
-Plan: 0 of 4 in current phase
-Status: Phase 3 planned — 4 plans in 3 waves; verified; ready for execution
-Last activity: 2026-05-24 — Phase 3 plan-phase complete; 03-01 through 03-04 PLAN.md written
+Phase: 4 of 5 (Display Polish) — READY TO DISCUSS/PLAN
+Plan: 0 of TBD in current phase
+Status: Phase 3 complete — 4/4 plans executed, verified, 125 tests passing
+Last activity: 2026-05-24 — Phase 3 execution complete; all code-review findings fixed; verification passed 12/12
 
-Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [▒▒░░░░░░░░] Phase 3 planned (4 plans)
+Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [██████████] Phase 3 complete (4/4 plans) | [░░░░░░░░░░] Phase 4 not started
 
 ## Performance Metrics
 
@@ -81,5 +81,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-24
-Stopped at: Phase 3 planning complete — 4 plans verified, ready to execute
-Resume file: .planning/phases/03-auth-bgg-sync/03-02-PLAN.md (Wave 2 core infrastructure is the critical path)
+Stopped at: Phase 3 execution complete — verification passed, advancing to Phase 4
+Resume file: .planning/phases/ (start with /gsd:discuss-phase 4 to plan Display Polish)

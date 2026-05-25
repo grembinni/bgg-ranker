@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
           target: 'https://boardgamegeek.com',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/bggapi/, ''),
-          cookieDomainRewrite: 'localhost',
+          selfHandleResponse: true,  // prevents http-proxy from piping to res automatically (CR-04)
           configure: (proxy) => {
             const devSession = env.BGG_DEV_SESSION
             proxy.on('proxyReq', (proxyReq) => {
@@ -31,28 +31,27 @@ export default defineConfig(({ mode }) => {
                 const sessionId = sessionCookie?.split(';')[0]?.replace('sessionid=', '') ?? ''
 
                 const body = JSON.stringify({ sessionId })
-                const statusCode = proxyRes.statusCode ?? 200
-
-                // Override response headers — remove Set-Cookie; set JSON content-type
-                res.writeHead(statusCode, {
-                  'content-type': 'application/json',
-                  'content-length': Buffer.byteLength(body).toString(),
-                })
-
-                // Consume the upstream body (required to prevent socket hang), then send ours
+                // Drain upstream body first, then send our JSON response synchronously
                 proxyRes.resume()
                 proxyRes.on('end', () => {
+                  res.writeHead(proxyRes.statusCode ?? 200, {
+                    'content-type': 'application/json',
+                    'content-length': Buffer.byteLength(body).toString(),
+                  })
                   res.end(body)
                 })
                 return
               }
 
-              // Non-login responses: remove Secure flag so HTTP localhost accepts cookie
+              // Non-login responses: rewrite cookies and pipe upstream to client manually
+              // (required because selfHandleResponse: true disables auto-piping)
               if (cookies) {
                 proxyRes.headers['set-cookie'] = cookies.map((c) =>
                   c.replace(/;\s*Secure/i, '').replace(/domain=[^;]+/i, 'domain=localhost')
                 )
               }
+              res.writeHead(proxyRes.statusCode ?? 200, proxyRes.headers)
+              proxyRes.pipe(res)
             })
           },
         },

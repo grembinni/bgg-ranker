@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation** - Dev CORS proxy validated, ranking engine proven, Firebase Function source ready
 - [ ] **Phase 2: Collection & Ranking** - User enters their BGG username, fetches their collection, and ranks games locally — no password needed
 - [x] **Phase 3: Auth & BGG Sync** - User adds their BGG password to sync rankings back to BGG
+- [ ] **Phase 3.1: Sync Repair** *(INSERTED)* - Fix the write path, add dirty-game tracking, 1s throttle
 - [ ] **Phase 4: Display Polish** - Cover art and upset callouts make comparisons visually rich
 - [ ] **Phase 5: Firebase Production Deploy** - Firebase Cloud Function deployed; app runs end-to-end in production
 
@@ -97,6 +98,26 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Cross-cutting constraints:** Integer-internal ratings (ratingInt/100 only at bggRateGame call site) across Plans 03-02, 03-04; sessionId excluded from partialize across Plans 03-01, 03-02; UI components never call bggClient directly across Plans 03-03, 03-04
 
+### Phase 3.1: Sync Repair *(INSERTED)*
+**Goal:** Fix the "Sync to BGG" write path so ratings actually land on BGG; replace blunt full-resend logic with per-game dirty tracking
+**Mode:** mvp
+**Depends on:** Phase 3
+**Requirements:** SYNC-01, SYNC-02, SYNC-03
+**Success Criteria:**
+  1. Clicking "Sync to BGG" after login successfully writes ratings to BGG (no "Sync failed" error)
+  2. The Vite proxy correctly forwards write requests with a valid session even after a dev server restart
+  3. After N comparisons, only the N affected games are included in the next sync — not the full collection
+  4. Sync throttle is 1 second between writes
+**Plans:** 2 plans
+
+**Wave 1**
+- [ ] 03.1-01-PLAN.md — Fix write path: proxy session fallback, ajax=1, error logging, 1s throttle
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 03.1-02-PLAN.md — Dirty tracking: replace syncedGameIds clearing with per-action dirtyGameIds marking
+
+---
+
 ### Phase 4: Display Polish
 **Goal:** The comparison screen shows cover art for each game and acknowledges significant ranking upsets with a callout
 **Mode:** mvp
@@ -138,5 +159,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Foundation | 4/4 | ✅ Complete | 2026-05-23 |
 | 2. Collection & Ranking | 3/3 | ✅ Complete | 2026-05-23 |
 | 3. Auth & BGG Sync | 4/4 | ✅ Complete | 2026-05-24 |
+| 3.1. Sync Repair | 0/2 | Not started | - |
 | 4. Display Polish | 0/TBD | Not started | - |
 | 5. Firebase Production Deploy | 0/1 | Not started | - |

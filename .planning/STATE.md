@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-05-22)
 
 **Core value:** The user can always tell which of any two games they actually prefer, and the ranking list accurately reflects that — not BGG's community scores, not gut-feel star ratings.
-**Current focus:** Phase 4 — Display Polish (Phase 3 complete)
+**Current focus:** Phase 3.1 — Sync Repair (Phase 3 complete)
 
 ## Current Position
 
-Phase: 4 of 5 (Display Polish) — READY TO DISCUSS/PLAN
-Plan: 0 of TBD in current phase
-Status: Phase 3 complete — 4/4 plans executed, verified, 125 tests passing
-Last activity: 2026-05-24 — Phase 3 execution complete; all code-review findings fixed; verification passed 12/12
+Phase: 3.1 (Sync Repair) — READY TO EXECUTE
+Plan: 0 of 2 in current phase
+Status: Phase 3 complete — Phase 3.1 planned, 2 plans ready
+Last activity: 2026-05-25 — Phase 3.1 planned; sync write-path bugs diagnosed; dirty tracking designed
 
-Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [██████████] Phase 3 complete (4/4 plans) | [░░░░░░░░░░] Phase 4 not started
+Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [██████████] Phase 3 complete (4/4 plans) | [░░░░░░░░░░] Phase 3.1 not started | [░░░░░░░░░░] Phase 4 not started
 
 ## Performance Metrics
 

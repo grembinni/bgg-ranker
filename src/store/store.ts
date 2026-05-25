@@ -375,6 +375,8 @@ export function createAppStore(rawStorage: StateStorage) {
 
             try {
               await bggRateGame(gameId, get().ratings[gameId], currentSessionId)
+              // Re-check after the async write — user may have cancelled while awaiting
+              if (!get().sessionId) return
               get().markGameSynced(gameId)
             } catch (err) {
               const status = (err as { status?: number }).status

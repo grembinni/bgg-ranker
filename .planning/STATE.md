@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-05-22)
 
 **Core value:** The user can always tell which of any two games they actually prefer, and the ranking list accurately reflects that — not BGG's community scores, not gut-feel star ratings.
-**Current focus:** Phase 3.1 — Sync Repair (Phase 3 complete)
+**Current focus:** Phase 4 — Display Polish (Phase 3.1 complete)
 
 ## Current Position
 
-Phase: 3.1 (Sync Repair) — IN PROGRESS
-Plan: 1 of 2 in current phase
-Status: Phase 3.1 Plan 01 complete — sync write path fixed; Plan 02 (dirty tracking) next
-Last activity: 2026-05-25 — Phase 3.1 Plan 01 executed; proxy fallback, ajax=1, 1s throttle committed
+Phase: 4 (Display Polish) — NOT STARTED
+Plan: 0 of TBD in current phase
+Status: Phase 3.1 complete — 2/2 plans, verification passed 12/12; advance to Phase 4
+Last activity: 2026-05-25 — Phase 3.1 executed; sync write path fixed; dirty tracking implemented; 4 code review fixes applied
 
-Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [██████████] Phase 3 complete (4/4 plans) | [█████░░░░░] Phase 3.1 in progress (1/2 plans) | [░░░░░░░░░░] Phase 4 not started
+Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [██████████] Phase 3 complete (4/4 plans) | [██████████] Phase 3.1 complete (2/2 plans) | [░░░░░░░░░░] Phase 4 not started
 
 ## Performance Metrics
 
@@ -84,5 +84,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-25
-Stopped at: Phase 3.1 Plan 01 complete — sync write path fixed (proxy fallback, ajax=1, 1s throttle)
-Resume file: .planning/phases/03.1-sync-repair/03.1-02-PLAN.md (dirty tracking plan)
+Stopped at: Phase 3.1 execution complete — verification passed, advancing to Phase 4
+Resume file: .planning/phases/ (start with /gsd:discuss-phase 4 to plan Display Polish)

@@ -114,7 +114,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] 03.1-01-PLAN.md — Fix write path: proxy session fallback, ajax=1, error logging, 1s throttle
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 03.1-02-PLAN.md — Dirty tracking: replace syncedGameIds clearing with per-action dirtyGameIds marking
+- [x] 03.1-02-PLAN.md — Dirty tracking: replace syncedGameIds clearing with per-action dirtyGameIds marking
 
 ---
 
@@ -159,6 +159,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Foundation | 4/4 | ✅ Complete | 2026-05-23 |
 | 2. Collection & Ranking | 3/3 | ✅ Complete | 2026-05-23 |
 | 3. Auth & BGG Sync | 4/4 | ✅ Complete | 2026-05-24 |
-| 3.1. Sync Repair | 1/2 | In progress | - |
+| 3.1. Sync Repair | 2/2 | ✅ Complete | 2026-05-25 |
 | 4. Display Polish | 0/TBD | Not started | - |
 | 5. Firebase Production Deploy | 0/1 | Not started | - |

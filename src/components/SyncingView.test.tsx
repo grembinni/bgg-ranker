@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 /**
  * SyncingView.test.tsx — Unit tests for the SyncingView component
  *

@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 ## Current Position
 
-Phase: 4 (Display Polish) — PLANNED
-Plan: 0 of 4 in current phase
-Status: Ready to execute — 4 plans in 3 waves
-Last activity: 2026-05-25 — Phase 4 planned; 4 plans created (04-01 through 04-04)
+Phase: 4 (Display Polish) — IN PROGRESS
+Plan: 1 of 4 in current phase
+Status: Executing — Wave 0 complete (04-01 done), Wave 1 next (04-02)
+Last activity: 2026-05-25 — 04-01 Wave 0 RED phase complete
 
-Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [██████████] Phase 3 complete (4/4 plans) | [██████████] Phase 3.1 complete (2/2 plans) | [▒▒░░░░░░░░] Phase 4 planned (0/4 executed)
+Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [██████████] Phase 3 complete (4/4 plans) | [██████████] Phase 3.1 complete (2/2 plans) | [███░░░░░░░] Phase 4 in progress (1/4 executed)
 
 ## Performance Metrics
 
@@ -28,9 +28,10 @@ Progress: [██████████] Phase 1 complete | [█████�
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 3.1 | 1 | 3 min | 3 min |
+| 4 | 1 | 15 min | 15 min |
 
 **Recent Trend:**
-- Last 5 plans: 03.1-01 (~3 min)
+- Last 5 plans: 03.1-01 (~3 min), 04-01 (~15 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -58,6 +59,9 @@ Recent decisions affecting current work:
 - Phase 3.1: Proxy fallback uses minimal `SessionID=<value>` cookie (sufficient for geekrating endpoint without full 3-cookie string)
 - Phase 3.1: bggRateGame error body capped at 200 chars in console.error (dev-only, no PII)
 - Phase 3.1: startSync delay fixed at 1000ms (replaces random 200-500ms for deterministic pacing)
+- Phase 4.01: Wave 0 RED tests use dynamic let variables in vi.mock factory (mockLastUpset, mockCurrentPair captured by reference)
+- Phase 4.01: Upset detection positions use explicit ratings for deterministic assertions (g3=900/g2=700/g1=500/g0=300)
+- Phase 4.01: login auto-resume tests that verify current behavior intentionally pass at RED — only the new skip-fetch path fails
 
 ### Pending Todos
 
@@ -84,5 +88,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-25
-Stopped at: Phase 4 planned — 4 plans verified and ready to execute
-Resume file: .planning/phases/04-display-polish/ (run /gsd:execute-phase 4)
+Stopped at: 04-01-SUMMARY.md complete — Wave 0 RED phase done, ready for 04-02 (Wave 1: store + GameCard implementation)
+Resume file: .planning/phases/04-display-polish/04-02-PLAN.md

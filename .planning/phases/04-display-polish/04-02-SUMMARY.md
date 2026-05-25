@@ -123,6 +123,20 @@ None — all behavior is fully implemented. `lastUpset` is wired from `pick()` t
 - 04-03 can implement hamburger menu in `ComparisonView.tsx` and entry form changes in `UsernameEntry.tsx` — `logout()` action is ready to wire up
 - 04-04 can implement GameCard thumbnail upgrade and upset callout rendering in `ComparisonView.tsx` — `lastUpset` state is ready to read
 
+## Self-Check: PASSED
+
+- src/store/store.ts: FOUND
+- src/store/store.test.ts: FOUND
+- .planning/phases/04-display-polish/04-02-SUMMARY.md: FOUND
+- Commit aa652d3 (Task 1): FOUND
+- Commit 6268320 (Task 2): FOUND
+- lastUpset type in ComparisonStateSlice: FOUND
+- logout(): void in AppActions: FOUND
+- upsetTimer module variable: FOUND
+- upset detection (winnerPos > loserPos): FOUND
+- PERSIST-02 guard in login(): FOUND
+- lastUpset absent from partialize: CONFIRMED
+
 ---
 *Phase: 04-display-polish*
 *Completed: 2026-05-25*

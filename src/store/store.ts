@@ -70,6 +70,7 @@ interface ComparisonStateSlice {
   syncStatus: 'idle' | 'syncing' | 'session-expired' | 'error' | 'complete' // Q3
   syncProgress: number  // games written so far in current sync batch
   syncTotal: number     // total games to write in current sync batch
+  lastUpset: { winnerName: string; spotsGained: number } | null  // D-03: session-only, not persisted
 }
 
 interface AppActions {
@@ -93,6 +94,7 @@ interface AppActions {
   completeSyncAll(): void
   reAuthAndResume(password: string): Promise<void>
   cancelSync(): void
+  logout(): void
 }
 
 export type AppStore = SessionStateSlice &
@@ -151,6 +153,12 @@ function delay(ms: number): Promise<void> {
  */
 let completeSyncTimer: ReturnType<typeof setTimeout> | null = null
 
+/**
+ * upsetTimer — Tracks the setTimeout handle for clearing lastUpset after 5 seconds (D-03).
+ * Module-level to allow cancellation across rapid picks (Pitfall 1).
+ */
+let upsetTimer: ReturnType<typeof setTimeout> | null = null
+
 // ---------------------------------------------------------------------------
 // Store factory (injectable storage for testing)
 // ---------------------------------------------------------------------------
@@ -191,6 +199,7 @@ export function createAppStore(rawStorage: StateStorage) {
         syncStatus: 'idle',
         syncProgress: 0,
         syncTotal: 0,
+        lastUpset: null,
 
         // --- Actions ---
 

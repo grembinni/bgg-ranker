@@ -17,7 +17,6 @@ export default function GameCard({ gameId, onPick, onMarkUnplayed }: GameCardPro
 
   if (game === undefined) return null
 
-  const totalGames = Object.keys(ratings).length
   const rank = getRankPosition(gameId, ratings)
 
   return (
@@ -30,16 +29,22 @@ export default function GameCard({ gameId, onPick, onMarkUnplayed }: GameCardPro
       >
         ✕
       </button>
-      {game.thumbnail && (
-        <img
-          src={game.thumbnail.startsWith('//') ? `https:${game.thumbnail}` : game.thumbnail}
-          alt={game.name}
-          className="w-full h-32 object-contain"
-        />
+      {game.thumbnail ? (
+        <a href={`https://boardgamegeek.com/boardgame/${game.id}`} target="_blank" rel="noopener noreferrer">
+          <img
+            src={game.thumbnail.startsWith('//') ? `https:${game.thumbnail}` : game.thumbnail}
+            alt={game.name}
+            className="w-full h-48 object-contain aspect-square"
+          />
+        </a>
+      ) : (
+        <div className="h-48 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-sm aspect-square">
+          No image
+        </div>
       )}
       <div className="text-xl font-semibold text-gray-900 leading-tight">{game.name}</div>
       <div className="text-sm text-gray-500">({game.yearPublished})</div>
-      <div className="text-sm text-gray-500">#{rank} of {totalGames}</div>
+      <div className="text-sm text-gray-500">#{rank}</div>
       <button
         type="button"
         onClick={onPick}

@@ -514,7 +514,7 @@ export function createAppStore(rawStorage: StateStorage) {
             const result = await bggLogin(username, password)
             // Reset syncStatus to 'idle' so startSync's re-entrancy guard allows the call
             set({ sessionId: result.sessionId, syncStatus: 'idle' })
-            // Resume from where sync left off — syncedGameIds tracks already-sent games (D-10)
+            // Resume from where sync left off — dirtyGameIds contains remaining un-synced games (D-10)
             await get().startSync()
           } catch {
             set({ syncStatus: 'error' })

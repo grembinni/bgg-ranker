@@ -395,7 +395,7 @@ vi.mock('../store/store', () => ({
 
 **All other claims in this research were verified by direct code reading of the codebase or from CONTEXT.md locked decisions.**
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Logout action: does it also need to cancel any in-flight sync?**
    - What we know: `cancelSync()` sets `sessionId=null` to abort the `startSync` loop; `logout()` also clears `sessionId`.

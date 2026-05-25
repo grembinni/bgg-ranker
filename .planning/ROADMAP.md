@@ -28,10 +28,19 @@ Phases 2–4 develop and test against the Vite dev proxy (`/bggapi/*`). All desi
   2. After a user picks a winner that was previously ranked significantly lower than the loser, the app shows a callout (e.g. "Moved up 12 spots") that is visible without scrolling and clears on the next comparison
 **Plans:** 4 plans
 Plans:
-- [ ] 04-01-PLAN.md — Wave 0: extend existing test files with failing Phase 4 describe blocks (TDD RED phase)
-- [ ] 04-02-PLAN.md — Wave 1a: store extension — lastUpset field, pick() upset detection, login() auto-resume, logout() action
-- [ ] 04-03-PLAN.md — Wave 1b: GameCard upgrade — h-48 thumbnail, BGG page link, gray placeholder, #N rank (DISP-01)
-- [ ] 04-04-PLAN.md — Wave 2: ComparisonView hamburger header + upset callout; UsernameEntry continue-prompt removal
+**Wave 0**
+- [ ] 04-01-PLAN.md — extend existing test files with failing Phase 4 describe blocks (TDD RED)
+
+**Wave 1** *(blocked on Wave 0 completion — parallel)*
+- [ ] 04-02-PLAN.md — store extension: lastUpset field, pick() upset detection, login() auto-resume, logout()
+- [ ] 04-03-PLAN.md — GameCard upgrade: h-48 thumbnail, BGG page link, gray placeholder, #N rank (DISP-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 04-04-PLAN.md — ComparisonView hamburger + upset callout; UsernameEntry continue-prompt removal
+
+**Cross-cutting constraints:**
+- `lastUpset` must be excluded from `partialize` (session-only) — enforced in 04-02 and verified in must_haves
+- `pick()` must capture positions from pre-upset ratings sort before calling `applyUpset()` — enforced in 04-02
 
 ### Phase 5: Firebase Production Deploy
 **Goal:** Firebase Cloud Function deployed and production CORS proxy operational — the app runs end-to-end in production with no CORS errors

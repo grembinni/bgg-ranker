@@ -315,7 +315,9 @@ export function createAppStore(rawStorage: StateStorage) {
           const { ratings, comparisonsTotal, skipQueue, sessionComparisons } = get()
           const newRatings = applyUpset(winnerId, loserId, ratings)
           const newQueue = skipQueue.length > 0 ? skipQueue.slice(1) : skipQueue
-          const nextPair = selectRandomPair(newRatings, newQueue)
+          // Delegate to selectRandomPair with the pre-drain queue so it returns
+          // skipQueue[0] when non-empty (drain semantics live in selectRandomPair, WR-01)
+          const nextPair = selectRandomPair(newRatings, skipQueue)
           set({
             ratings: newRatings,
             comparisonsTotal: comparisonsTotal + 1,
@@ -436,7 +438,8 @@ export function createAppStore(rawStorage: StateStorage) {
           }
           try {
             const result = await bggLogin(username, password)
-            set({ sessionId: result.sessionId, syncStatus: 'syncing' })
+            // Reset syncStatus to 'idle' so startSync's re-entrancy guard allows the call
+            set({ sessionId: result.sessionId, syncStatus: 'idle' })
             // Resume from where sync left off — syncedGameIds tracks already-sent games (D-10)
             await get().startSync()
           } catch {

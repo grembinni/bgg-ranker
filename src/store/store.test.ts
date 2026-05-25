@@ -9,7 +9,7 @@
  * This approach avoids changing the global vitest.config.ts environment setting and keeps
  * existing engine tests unaffected (RESEARCH.md Pitfall 6).
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 vi.mock('../api/bggClient', () => ({
   fetchCollection: vi.fn(),
@@ -848,5 +848,129 @@ describe('RankingsStateSlice persistence (SYNC-03)', () => {
     const persistKey = 'bgg-ranker:v1:collection-and-rankings'
     const parsed = JSON.parse(dump[persistKey]) as { state: Record<string, unknown> }
     expect('sessionId' in parsed.state).toBe(false)
+  })
+})
+
+// ===========================================================================
+// Phase 4: Display Polish — RED tests
+// All tests below expect failures until 04-02 through 04-04 implement these features.
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// pick() upset detection (D-01, D-02, D-03)
+// ---------------------------------------------------------------------------
+
+describe('pick() upset detection (D-01, D-02, D-03)', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('sets lastUpset when winner was ranked lower than loser (upset) (D-01)', () => {
+    // g3=900 (rank1/pos0), g2=700 (rank2/pos1), g1=500 (rank3/pos2), g0=300 (rank4/pos3)
+    const store = setupStoreWithGames(makeGames(4), { g3: 900, g2: 700, g1: 500, g0: 300 })
+    store.setState({ currentPair: ['g0', 'g3'] } as Parameters<typeof store.setState>[0])
+
+    // g0 (pos3) beats g3 (pos0) — upset: winner was ranked lower
+    store.getState().pick('g0', 'g3')
+
+    const state = store.getState() as Record<string, unknown>
+    expect(state.lastUpset).not.toBeNull()
+    const lastUpset = state.lastUpset as { winnerName: string; spotsGained: number }
+    expect(lastUpset.winnerName).toBe('Game 0')
+    expect(lastUpset.spotsGained).toBe(3)
+  })
+
+  it('does NOT set lastUpset when winner was ranked higher than loser (normal result) (D-01)', () => {
+    // g3=900 (rank1/pos0), g2=700, g1=500, g0=300 (rank4/pos3)
+    const store = setupStoreWithGames(makeGames(4), { g3: 900, g2: 700, g1: 500, g0: 300 })
+    store.setState({ currentPair: ['g3', 'g0'] } as Parameters<typeof store.setState>[0])
+
+    // g3 (pos0) beats g0 (pos3) — normal: winner was already ranked higher
+    store.getState().pick('g3', 'g0')
+
+    const state = store.getState() as Record<string, unknown>
+    expect(state.lastUpset).toBeNull()
+  })
+
+  it('clears lastUpset after 5 seconds (D-03)', () => {
+    vi.useFakeTimers()
+
+    const store = setupStoreWithGames(makeGames(4), { g3: 900, g2: 700, g1: 500, g0: 300 })
+    store.setState({ currentPair: ['g0', 'g3'] } as Parameters<typeof store.setState>[0])
+
+    store.getState().pick('g0', 'g3')
+
+    // Immediately after pick: lastUpset should be non-null
+    const stateBefore = store.getState() as Record<string, unknown>
+    expect(stateBefore.lastUpset).not.toBeNull()
+
+    // Advance timers by 5000ms
+    vi.advanceTimersByTime(5000)
+
+    // After 5 seconds: lastUpset should be cleared
+    const stateAfter = store.getState() as Record<string, unknown>
+    expect(stateAfter.lastUpset).toBeNull()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// login() auto-resume (D-07)
+// ---------------------------------------------------------------------------
+
+describe('login() auto-resume (D-07)', () => {
+  it('skips fetchCollection and goes to comparison view when stored rankings belong to same user (D-07)', async () => {
+    vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'sess123' })
+
+    const store = createAppStore(createMockStorage())
+    store.setState({
+      rankingsUsername: 'alice',
+      ratings: makeRatings(3),
+      games: makeGames(3),
+    })
+
+    await store.getState().login('alice', 'pw')
+
+    // fetchCollection should NOT have been called
+    expect(vi.mocked(mockBggFetch)).not.toHaveBeenCalled()
+
+    // Should be in comparison view (auto-resumed)
+    expect(store.getState().view).toBe('comparison')
+    expect((store.getState() as Record<string, unknown>).sessionId).toBe('sess123')
+  })
+
+  it('calls fetchCollection when stored rankings belong to a different user (D-07)', async () => {
+    vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'sess123' })
+    vi.mocked(mockBggFetch).mockResolvedValueOnce([
+      { id: 'g0', name: 'Game 0', yearPublished: 2020, thumbnail: '', userRating: null },
+    ])
+
+    const store = createAppStore(createMockStorage())
+    store.setState({
+      rankingsUsername: 'bob',
+      ratings: makeRatings(3),
+      games: makeGames(3),
+    })
+
+    await store.getState().login('alice', 'pw')
+
+    expect(vi.mocked(mockBggFetch)).toHaveBeenCalled()
+  })
+
+  it('calls fetchCollection when same user but no ratings exist (D-07)', async () => {
+    vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'sess123' })
+    vi.mocked(mockBggFetch).mockResolvedValueOnce([
+      { id: 'g0', name: 'Game 0', yearPublished: 2020, thumbnail: '', userRating: null },
+    ])
+
+    const store = createAppStore(createMockStorage())
+    store.setState({
+      rankingsUsername: 'alice',
+      ratings: {},
+      games: makeGames(3),
+    })
+
+    await store.getState().login('alice', 'pw')
+
+    expect(vi.mocked(mockBggFetch)).toHaveBeenCalled()
   })
 })

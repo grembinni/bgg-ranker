@@ -137,6 +137,12 @@ function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+/**
+ * completeSyncTimer — Tracks the setTimeout handle from completeSyncAll so it
+ * can be cancelled by cancelSync or resetForNewUser (WR-03).
+ */
+let completeSyncTimer: ReturnType<typeof setTimeout> | null = null
+
 // ---------------------------------------------------------------------------
 // Store factory (injectable storage for testing)
 // ---------------------------------------------------------------------------
@@ -289,6 +295,7 @@ export function createAppStore(rawStorage: StateStorage) {
         },
 
         resetForNewUser(): void {
+          if (completeSyncTimer) { clearTimeout(completeSyncTimer); completeSyncTimer = null }
           set({
             ratings: {},
             games: {},
@@ -407,6 +414,7 @@ export function createAppStore(rawStorage: StateStorage) {
         },
 
         completeSyncAll(): void {
+          if (completeSyncTimer) clearTimeout(completeSyncTimer)
           const total = get().comparisonsTotal
           set({
             syncedGameIds: [],
@@ -414,7 +422,10 @@ export function createAppStore(rawStorage: StateStorage) {
             syncStatus: 'complete',
           })
           // Auto-return to comparison view after brief confirmation (D-07, ~2 seconds)
-          setTimeout(() => set({ view: 'comparison', syncStatus: 'idle' }), 2000)
+          completeSyncTimer = setTimeout(() => {
+            completeSyncTimer = null
+            set({ view: 'comparison', syncStatus: 'idle' })
+          }, 2000)
         },
 
         async reAuthAndResume(password: string): Promise<void> {
@@ -436,6 +447,7 @@ export function createAppStore(rawStorage: StateStorage) {
         cancelSync(): void {
           // Setting sessionId=null triggers the per-iteration abort check in startSync (Pitfall 4)
           // Do NOT clear syncedGameIds — preserve for resume (Q2 resolution)
+          if (completeSyncTimer) { clearTimeout(completeSyncTimer); completeSyncTimer = null }
           set({ sessionId: null, view: 'comparison', syncStatus: 'idle' })
         },
       }),

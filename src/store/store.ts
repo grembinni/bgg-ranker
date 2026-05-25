@@ -159,6 +159,10 @@ let completeSyncTimer: ReturnType<typeof setTimeout> | null = null
  */
 let upsetTimer: ReturnType<typeof setTimeout> | null = null
 
+// Temporary: sync only games rated 9.00+ (ratingInt >= 900) for initial testing.
+// Set to false to restore full sync of all dirty games.
+const SYNC_HIGH_RATED_ONLY = true
+
 // ---------------------------------------------------------------------------
 // Store factory (injectable storage for testing)
 // ---------------------------------------------------------------------------
@@ -477,16 +481,19 @@ export function createAppStore(rawStorage: StateStorage) {
 
           // Snapshot dirty set — iterate a copy so in-flight markGameSynced() removals are safe
           const toSync = [...dirtyGameIds]
+          const syncQueue = SYNC_HIGH_RATED_ONLY
+            ? toSync.filter(id => (get().ratings[id] ?? 0) >= 900)
+            : toSync
 
           set({
             view: 'syncing',
             syncStatus: 'syncing',
             syncProgress: 0,
-            syncTotal: toSync.length,
+            syncTotal: syncQueue.length,
           })
 
-          for (let i = 0; i < toSync.length; i++) {
-            const gameId = toSync[i]
+          for (let i = 0; i < syncQueue.length; i++) {
+            const gameId = syncQueue[i]
             // Check per-iteration — cancelSync() sets sessionId=null to abort (Pitfall 4)
             const currentSessionId = get().sessionId
             if (!currentSessionId) return
@@ -513,7 +520,7 @@ export function createAppStore(rawStorage: StateStorage) {
             }
 
             // Throttle between writes only — skip after the last game (WR-02)
-            if (i < toSync.length - 1) await delay(1000)
+            if (i < syncQueue.length - 1) await delay(1000)
           }
 
           get().completeSyncAll()

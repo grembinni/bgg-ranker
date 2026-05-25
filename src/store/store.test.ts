@@ -602,7 +602,7 @@ describe('startSync action (SYNC-01, SYNC-02)', () => {
 
     const store = createAppStore(createMockStorage())
     store.setState({
-      ratings: { g0: 900, g1: 700, g2: 500 },
+      ratings: { g0: 900, g1: 901, g2: 902 },
       sessionId: 'active-session',
       dirtyGameIds: ['g0', 'g1', 'g2'],
     } as Parameters<typeof store.setState>[0])
@@ -617,7 +617,7 @@ describe('startSync action (SYNC-01, SYNC-02)', () => {
 
     const store = createAppStore(createMockStorage())
     store.setState({
-      ratings: { g0: 900, g1: 700, g2: 500 },
+      ratings: { g0: 900, g1: 901, g2: 902 },
       sessionId: 'active-session',
       dirtyGameIds: ['g1', 'g2'], // g0 already clean — not in dirty set
     } as Parameters<typeof store.setState>[0])
@@ -634,7 +634,7 @@ describe('startSync action (SYNC-01, SYNC-02)', () => {
 
     const store = createAppStore(createMockStorage())
     store.setState({
-      ratings: { g0: 900, g1: 700 },
+      ratings: { g0: 900, g1: 901 },
       sessionId: 'active-session',
       dirtyGameIds: ['g0', 'g1'],
     } as Parameters<typeof store.setState>[0])
@@ -746,7 +746,7 @@ describe('reAuthAndResume action (AUTH-03)', () => {
     store.setState({
       sessionUsername: 'alice',
       sessionId: 'old-session',
-      ratings: { g0: 900, g1: 700 },
+      ratings: { g0: 700, g1: 900 },
       dirtyGameIds: ['g1'], // g0 already clean; only g1 should be called
     } as Parameters<typeof store.setState>[0])
 

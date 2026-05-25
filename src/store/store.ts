@@ -308,8 +308,7 @@ export function createAppStore(rawStorage: StateStorage) {
           const { ratings, comparisonsTotal, skipQueue, sessionComparisons } = get()
           const newRatings = applyUpset(winnerId, loserId, ratings)
           const newQueue = skipQueue.length > 0 ? skipQueue.slice(1) : skipQueue
-          const nextPair =
-            skipQueue.length > 0 ? skipQueue[0] : selectRandomPair(newRatings, [])
+          const nextPair = selectRandomPair(newRatings, newQueue)
           set({
             ratings: newRatings,
             comparisonsTotal: comparisonsTotal + 1,

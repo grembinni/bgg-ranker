@@ -125,7 +125,12 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
     expect(state.currentPair![0]).not.toBe(state.currentPair![1])
   })
 
-  it('shows continue-or-refetch prompt when rankingsUsername matches entered username and ratings exist (PERSIST-02, D-10)', async () => {
+  it('always proceeds to fetch even when rankingsUsername matches — PERSIST-02 guard moved to login() (D-07)', async () => {
+    vi.mocked(mockBggFetch).mockResolvedValueOnce([
+      { id: 'g0', name: 'Game 0', yearPublished: 2020, thumbnail: '', userRating: null },
+      { id: 'g1', name: 'Game 1', yearPublished: 2021, thumbnail: '', userRating: null },
+    ])
+
     const store = createAppStore(createMockStorage())
     store.setState({
       rankingsUsername: 'alice',
@@ -135,9 +140,10 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
 
     await store.getState().fetchCollection('alice')
 
-    expect(vi.mocked(mockBggFetch)).not.toHaveBeenCalled()
-    expect(store.getState().view).toBe('entry')
-    expect(store.getState().sessionUsername).toBe('alice')
+    // fetchCollection no longer has PERSIST-02 guard — it always fetches (Pitfall 3)
+    // The guard now lives exclusively in login() for D-07 auto-resume
+    expect(vi.mocked(mockBggFetch)).toHaveBeenCalledWith('alice', undefined)
+    expect(store.getState().view).toBe('comparison')
   })
 
   it('discards stored rankings and reseeds when entered username differs from rankingsUsername (PERSIST-02)', async () => {

@@ -4,6 +4,7 @@ import UsernameEntry from './components/UsernameEntry'
 import CollectionLoading from './components/CollectionLoading'
 import ComparisonView from './components/ComparisonView'
 import ErrorDisplay from './components/ErrorDisplay'
+import SyncingView from './components/SyncingView'
 
 function App() {
   const view = useStore(s => s.view)
@@ -27,7 +28,7 @@ function App() {
       {view === 'loading' && <CollectionLoading />}
       {view === 'comparison' && <ComparisonView />}
       {view === 'error' && <ErrorDisplay />}
-      {/* {view === 'syncing' && <SyncingView />} — added in plan 03-04 */}
+      {view === 'syncing' && <SyncingView />}
     </div>
   )
 }

@@ -591,13 +591,14 @@ describe('login action (AUTH-01)', () => {
 // ---------------------------------------------------------------------------
 
 describe('startSync action (SYNC-01, SYNC-02)', () => {
-  it('startSync() calls bggRateGame for each game in ratings (SYNC-01)', async () => {
+  it('startSync() calls bggRateGame for each gameId in dirtyGameIds (SYNC-01)', async () => {
     vi.mocked(mockBggRateGame).mockResolvedValue(undefined)
 
     const store = createAppStore(createMockStorage())
     store.setState({
       ratings: { g0: 900, g1: 700, g2: 500 },
       sessionId: 'active-session',
+      dirtyGameIds: ['g0', 'g1', 'g2'],
     } as Parameters<typeof store.setState>[0])
 
     await store.getState().startSync()
@@ -605,14 +606,14 @@ describe('startSync action (SYNC-01, SYNC-02)', () => {
     expect(vi.mocked(mockBggRateGame)).toHaveBeenCalledTimes(3)
   })
 
-  it('startSync() skips gameIds already in syncedGameIds (SYNC-03 resume anchor)', async () => {
+  it('startSync() only syncs dirty games — games absent from dirtyGameIds are skipped (SYNC-03 resume anchor)', async () => {
     vi.mocked(mockBggRateGame).mockResolvedValue(undefined)
 
     const store = createAppStore(createMockStorage())
     store.setState({
       ratings: { g0: 900, g1: 700, g2: 500 },
       sessionId: 'active-session',
-      syncedGameIds: ['g0'],
+      dirtyGameIds: ['g1', 'g2'], // g0 already clean — not in dirty set
     } as Parameters<typeof store.setState>[0])
 
     await store.getState().startSync()
@@ -629,7 +630,7 @@ describe('startSync action (SYNC-01, SYNC-02)', () => {
     store.setState({
       ratings: { g0: 900, g1: 700 },
       sessionId: 'active-session',
-      syncedGameIds: [],
+      dirtyGameIds: ['g0', 'g1'],
     } as Parameters<typeof store.setState>[0])
 
     await store.getState().startSync()
@@ -646,7 +647,7 @@ describe('startSync action (SYNC-01, SYNC-02)', () => {
     store.setState({
       ratings: { g0: 900 },
       sessionId: 'active-session',
-      syncedGameIds: [],
+      dirtyGameIds: ['g0'],
     } as Parameters<typeof store.setState>[0])
 
     await store.getState().startSync()
@@ -660,22 +661,23 @@ describe('startSync action (SYNC-01, SYNC-02)', () => {
 // ---------------------------------------------------------------------------
 
 describe('markGameSynced action (SYNC-03)', () => {
-  it('markGameSynced("g123") appends "g123" to syncedGameIds (SYNC-03)', () => {
+  it('markGameSynced("g123") removes "g123" from dirtyGameIds (SYNC-03)', () => {
     const store = createAppStore(createMockStorage())
-    store.setState({ syncedGameIds: ['g0'] } as Parameters<typeof store.setState>[0])
+    store.setState({ dirtyGameIds: ['g0', 'g123'] } as Parameters<typeof store.setState>[0])
 
     store.getState().markGameSynced('g123')
 
-    expect((store.getState() as Record<string, unknown>).syncedGameIds).toContain('g123')
+    expect(store.getState().dirtyGameIds).not.toContain('g123')
+    expect(store.getState().dirtyGameIds).toContain('g0')
   })
 
   it('markGameSynced() increments syncProgress (SYNC-03)', () => {
     const store = createAppStore(createMockStorage())
-    store.setState({ syncProgress: 3, syncedGameIds: [] } as Parameters<typeof store.setState>[0])
+    store.setState({ syncProgress: 3, dirtyGameIds: ['g0'] } as Parameters<typeof store.setState>[0])
 
     store.getState().markGameSynced('g0')
 
-    expect((store.getState() as Record<string, unknown>).syncProgress).toBe(4)
+    expect(store.getState().syncProgress).toBe(4)
   })
 })
 
@@ -684,13 +686,14 @@ describe('markGameSynced action (SYNC-03)', () => {
 // ---------------------------------------------------------------------------
 
 describe('completeSyncAll action (SYNC-03)', () => {
-  it('completeSyncAll() clears syncedGameIds to [] (SYNC-03)', () => {
+  it('completeSyncAll() leaves dirtyGameIds empty (all removed by markGameSynced during sync) (SYNC-03)', () => {
     const store = createAppStore(createMockStorage())
-    store.setState({ syncedGameIds: ['g0', 'g1'] } as Parameters<typeof store.setState>[0])
+    // Simulate post-sync state: markGameSynced() already removed each ID
+    store.setState({ dirtyGameIds: [] } as Parameters<typeof store.setState>[0])
 
     store.getState().completeSyncAll()
 
-    expect((store.getState() as Record<string, unknown>).syncedGameIds).toEqual([])
+    expect(store.getState().dirtyGameIds).toEqual([])
   })
 
   it('completeSyncAll() sets comparisonsAtLastSync = comparisonsTotal (SYNC-03, D-12)', () => {
@@ -698,12 +701,11 @@ describe('completeSyncAll action (SYNC-03)', () => {
     store.setState({
       comparisonsTotal: 42,
       comparisonsAtLastSync: 0,
-      syncedGameIds: [],
     } as Parameters<typeof store.setState>[0])
 
     store.getState().completeSyncAll()
 
-    expect((store.getState() as Record<string, unknown>).comparisonsAtLastSync).toBe(42)
+    expect(store.getState().comparisonsAtLastSync).toBe(42)
   })
 })
 
@@ -721,16 +723,16 @@ describe('reAuthAndResume action (AUTH-03)', () => {
       sessionUsername: 'alice',
       sessionId: 'old-session',
       ratings: { g0: 900 },
-      syncedGameIds: ['g0'],
+      dirtyGameIds: ['g0'],
     } as Parameters<typeof store.setState>[0])
 
     await store.getState().reAuthAndResume('newpassword')
 
     expect(vi.mocked(mockBggLogin)).toHaveBeenCalledWith('alice', 'newpassword')
-    expect((store.getState() as Record<string, unknown>).sessionId).toBe('new-session-456')
+    expect(store.getState().sessionId).toBe('new-session-456')
   })
 
-  it('reAuthAndResume() resumes sync from last position (syncedGameIds not cleared) (SYNC-03, D-10)', async () => {
+  it('reAuthAndResume() resumes sync — only dirty games are written (g0 already clean) (SYNC-03, D-10)', async () => {
     vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'new-session-456' })
     vi.mocked(mockBggRateGame).mockResolvedValue(undefined)
 
@@ -739,7 +741,7 @@ describe('reAuthAndResume action (AUTH-03)', () => {
       sessionUsername: 'alice',
       sessionId: 'old-session',
       ratings: { g0: 900, g1: 700 },
-      syncedGameIds: ['g0'], // g0 already synced; only g1 should be called
+      dirtyGameIds: ['g1'], // g0 already clean; only g1 should be called
     } as Parameters<typeof store.setState>[0])
 
     await store.getState().reAuthAndResume('newpassword')
@@ -761,16 +763,16 @@ describe('cancelSync action', () => {
 
     store.getState().cancelSync()
 
-    expect((store.getState() as Record<string, unknown>).sessionId).toBeNull()
+    expect(store.getState().sessionId).toBeNull()
   })
 
-  it('cancelSync() does NOT clear syncedGameIds (preserve for resume per Q2 resolution)', () => {
+  it('cancelSync() does NOT clear dirtyGameIds — remaining dirty games preserved for resume', () => {
     const store = createAppStore(createMockStorage())
-    store.setState({ sessionId: 'active-session', syncedGameIds: ['g0', 'g1'] } as Parameters<typeof store.setState>[0])
+    store.setState({ sessionId: 'active-session', dirtyGameIds: ['g0', 'g1'] } as Parameters<typeof store.setState>[0])
 
     store.getState().cancelSync()
 
-    expect((store.getState() as Record<string, unknown>).syncedGameIds).toEqual(['g0', 'g1'])
+    expect(store.getState().dirtyGameIds).toEqual(['g0', 'g1'])
   })
 })
 
@@ -779,34 +781,29 @@ describe('cancelSync action', () => {
 // ---------------------------------------------------------------------------
 
 describe('beforeunload predicate (AUTH-02)', () => {
-  it('comparisonsTotal > comparisonsAtLastSync is true after a pick with comparisonsAtLastSync=0 (AUTH-02)', () => {
+  it('dirtyGameIds.length > 0 after a pick that changes ratings (AUTH-02)', () => {
     const store = setupStoreWithGames(makeGames(2), { g0: 900, g1: 500 })
     store.setState({
       comparisonsTotal: 0,
-      comparisonsAtLastSync: 0,
+      dirtyGameIds: [],
       currentPair: ['g0', 'g1'],
     } as Parameters<typeof store.setState>[0])
 
-    store.getState().pick('g0', 'g1')
+    store.getState().pick('g1', 'g0')  // upset: g1 (500) beats g0 (900) → ratings change
 
-    const state = store.getState() as Record<string, unknown>
-    const comparisonsTotal = state.comparisonsTotal as number
-    const comparisonsAtLastSync = state.comparisonsAtLastSync as number
-    expect(comparisonsTotal > comparisonsAtLastSync).toBe(true)
+    expect(store.getState().dirtyGameIds.length).toBeGreaterThan(0)
   })
 
-  it('comparisonsTotal === comparisonsAtLastSync after completeSyncAll() (AUTH-02, D-12)', () => {
+  it('dirtyGameIds is empty after all games are marked synced (AUTH-02)', () => {
     const store = createAppStore(createMockStorage())
     store.setState({
-      comparisonsTotal: 15,
-      comparisonsAtLastSync: 0,
-      syncedGameIds: [],
+      dirtyGameIds: ['g0', 'g1'],
     } as Parameters<typeof store.setState>[0])
 
-    store.getState().completeSyncAll()
+    store.getState().markGameSynced('g0')
+    store.getState().markGameSynced('g1')
 
-    const state = store.getState() as Record<string, unknown>
-    expect(state.comparisonsTotal).toBe(state.comparisonsAtLastSync)
+    expect(store.getState().dirtyGameIds).toEqual([])
   })
 })
 
@@ -815,14 +812,14 @@ describe('beforeunload predicate (AUTH-02)', () => {
 // ---------------------------------------------------------------------------
 
 describe('RankingsStateSlice persistence (SYNC-03)', () => {
-  it('syncedGameIds and comparisonsAtLastSync are present in partialize output (SYNC-03)', () => {
+  it('dirtyGameIds and comparisonsAtLastSync are present in partialize output (SYNC-03)', () => {
     const storage = createMockStorage()
     const store = createAppStore(storage)
     store.setState({
       games: makeGames(2),
       ratings: { g0: 900, g1: 500 },
       currentPair: ['g0', 'g1'],
-      syncedGameIds: ['g0'],
+      dirtyGameIds: ['g0'],
       comparisonsAtLastSync: 5,
     } as Parameters<typeof store.setState>[0])
 
@@ -831,7 +828,7 @@ describe('RankingsStateSlice persistence (SYNC-03)', () => {
     const dump = storage._dump()
     const persistKey = 'bgg-ranker:v1:collection-and-rankings'
     const parsed = JSON.parse(dump[persistKey]) as { state: Record<string, unknown> }
-    expect('syncedGameIds' in parsed.state).toBe(true)
+    expect('dirtyGameIds' in parsed.state).toBe(true)
     expect('comparisonsAtLastSync' in parsed.state).toBe(true)
   })
 

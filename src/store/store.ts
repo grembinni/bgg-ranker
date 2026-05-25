@@ -276,6 +276,8 @@ export function createAppStore(rawStorage: StateStorage) {
               skipQueue: [],
               loadingMessage: null,
               errorMessage: null,
+              // All freshly-seeded games need a sync to BGG (D-04)
+              dirtyGameIds: Object.keys(ratings),
             })
           } catch (err) {
             // Map technical errors to user-facing copy from UI-SPEC §Copywriting Contract
@@ -326,23 +328,27 @@ export function createAppStore(rawStorage: StateStorage) {
             loadingMessage: null,
             lastFetched: null,
             unplayedIds: [],
-            syncedGameIds: [],
+            dirtyGameIds: [],
           })
         },
 
         pick(winnerId: string, loserId: string): void {
-          const { ratings, comparisonsTotal, skipQueue, sessionComparisons } = get()
+          const { ratings, comparisonsTotal, skipQueue, sessionComparisons, dirtyGameIds } = get()
           const newRatings = applyUpset(winnerId, loserId, ratings)
           const newQueue = skipQueue.length > 0 ? skipQueue.slice(1) : skipQueue
           // Delegate to selectRandomPair with the pre-drain queue so it returns
           // skipQueue[0] when non-empty (drain semantics live in selectRandomPair, WR-01)
           const nextPair = selectRandomPair(newRatings, skipQueue)
+          // Diff old vs new ratings to find only changed game IDs (precise dirty marking)
+          const changed = Object.keys(newRatings).filter(id => newRatings[id] !== ratings[id])
+          const newDirty = [...new Set([...dirtyGameIds, ...changed])]
           set({
             ratings: newRatings,
             comparisonsTotal: comparisonsTotal + 1,
             sessionComparisons: sessionComparisons + 1,
             currentPair: nextPair,
             skipQueue: newQueue,
+            dirtyGameIds: newDirty,
           })
         },
 
@@ -359,20 +365,21 @@ export function createAppStore(rawStorage: StateStorage) {
           const newRatings = redistribute(get().ratings)
           set({
             ratings: newRatings,
+            dirtyGameIds: Object.keys(newRatings),
             currentPair: selectRandomPair(newRatings, []),
           })
         },
 
         markUnplayed(gameId: string): void {
-          const { ratings, unplayedIds, skipQueue, syncedGameIds } = get()
+          const { ratings, unplayedIds, skipQueue, dirtyGameIds } = get()
           const newRatings = { ...ratings }
           delete newRatings[gameId]
           const newQueue = skipQueue.filter(([a, b]) => a !== gameId && b !== gameId)
           set({
             ratings: newRatings,
             unplayedIds: [...unplayedIds, gameId],
-            // Remove from synced so next sync sends rating=0 for this game
-            syncedGameIds: syncedGameIds.filter(id => id !== gameId),
+            // Mark dirty so next sync sends rating=0 (removes rating from BGG)
+            dirtyGameIds: [...new Set([...dirtyGameIds, gameId])],
             skipQueue: newQueue,
             currentPair: selectRandomPair(newRatings, newQueue),
           })
@@ -382,7 +389,8 @@ export function createAppStore(rawStorage: StateStorage) {
           const newRatings = initializeRankings(newOrderedIds, undefined, true)
           set({
             ratings: newRatings,
-            syncedGameIds: [],
+            // initializeRankings redistributes all ratings — mark every game dirty
+            dirtyGameIds: [...new Set([...get().dirtyGameIds, ...newOrderedIds])],
             // Treat a manual reorder as a comparison so the Sync button activates
             comparisonsTotal: get().comparisonsTotal + 1,
           })
@@ -400,7 +408,8 @@ export function createAppStore(rawStorage: StateStorage) {
           set({
             ratings: newRatings,
             unplayedIds: unplayedIds.filter(id => id !== gameId),
-            syncedGameIds: [],
+            // initializeRankings redistributes all ratings — mark every game in newOrder dirty
+            dirtyGameIds: [...new Set([...get().dirtyGameIds, ...newOrder])],
             comparisonsTotal: get().comparisonsTotal + 1,
           })
         },
@@ -430,19 +439,17 @@ export function createAppStore(rawStorage: StateStorage) {
 
         async startSync(): Promise<void> {
           if (get().syncStatus === 'syncing') return  // guard re-entrancy
-          const { ratings, sessionId, syncedGameIds, unplayedIds } = get()
+          const { dirtyGameIds, sessionId } = get()
           if (!sessionId) return
 
-          const ratedIds = Object.keys(ratings)
-          // allIds = rated games + unplayed games (unplayed sync with rating=0)
-          const allIds = [...ratedIds, ...unplayedIds]
-          const toSync = allIds.filter(id => !syncedGameIds.includes(id))
+          // Snapshot dirty set — iterate a copy so in-flight markGameSynced() removals are safe
+          const toSync = [...dirtyGameIds]
 
           set({
             view: 'syncing',
             syncStatus: 'syncing',
-            syncProgress: syncedGameIds.length,
-            syncTotal: allIds.length,
+            syncProgress: 0,
+            syncTotal: toSync.length,
           })
 
           for (const gameId of toSync) {
@@ -477,20 +484,18 @@ export function createAppStore(rawStorage: StateStorage) {
         },
 
         markGameSynced(gameId: string): void {
-          const { syncedGameIds, syncProgress } = get()
           set({
-            syncedGameIds: [...syncedGameIds, gameId],
-            syncProgress: syncProgress + 1,
+            dirtyGameIds: get().dirtyGameIds.filter(id => id !== gameId),
+            syncProgress: get().syncProgress + 1,
           })
         },
 
         completeSyncAll(): void {
           if (completeSyncTimer) clearTimeout(completeSyncTimer)
-          const total = get().comparisonsTotal
           set({
-            syncedGameIds: [],
-            comparisonsAtLastSync: total,
+            comparisonsAtLastSync: get().comparisonsTotal,
             syncStatus: 'complete',
+            // dirtyGameIds is already empty after all markGameSynced() calls; no explicit reset needed
           })
           // Auto-return to comparison view after brief confirmation (D-07, ~2 seconds)
           completeSyncTimer = setTimeout(() => {
@@ -518,7 +523,7 @@ export function createAppStore(rawStorage: StateStorage) {
 
         cancelSync(): void {
           // Setting sessionId=null triggers the per-iteration abort check in startSync (Pitfall 4)
-          // Do NOT clear syncedGameIds — preserve for resume (Q2 resolution)
+          // dirtyGameIds retains remaining un-synced IDs — resume picks them up on next startSync
           if (completeSyncTimer) { clearTimeout(completeSyncTimer); completeSyncTimer = null }
           set({ sessionId: null, view: 'comparison', syncStatus: 'idle' })
         },

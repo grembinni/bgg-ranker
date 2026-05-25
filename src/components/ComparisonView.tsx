@@ -5,9 +5,8 @@ export default function ComparisonView() {
   const currentPair = useStore(s => s.currentPair)
   const sessionComparisons = useStore(s => s.sessionComparisons)
   const comparisonsTotal = useStore(s => s.comparisonsTotal)
-  const comparisonsAtLastSync = useStore(s => s.comparisonsAtLastSync)
   const sessionUsername = useStore(s => s.sessionUsername)
-  const syncedGameIds = useStore(s => s.syncedGameIds)
+  const dirtyGameIds = useStore(s => s.dirtyGameIds)
   const unplayedIds = useStore(s => s.unplayedIds)
   const pick = useStore(s => s.pick)
   const skip = useStore(s => s.skip)
@@ -18,8 +17,7 @@ export default function ComparisonView() {
   const showUnplayedList = useStore(s => s.showUnplayedList)
   const sessionId = useStore(s => s.sessionId)
 
-  const hasUnsyncedUnplayed = unplayedIds.some(id => !syncedGameIds.includes(id))
-  const syncDisabled = !sessionId || (comparisonsTotal === comparisonsAtLastSync && !hasUnsyncedUnplayed)
+  const syncDisabled = !sessionId || dirtyGameIds.length === 0
 
   if (currentPair === null) {
     return (

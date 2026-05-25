@@ -5,8 +5,8 @@
  *
  * Tests the "Sync to BGG" button added to the ComparisonView header:
  *   - Button is always visible (never hidden)
- *   - Button is disabled when comparisonsTotal === comparisonsAtLastSync (D-08)
- *   - Button is enabled when comparisonsTotal > comparisonsAtLastSync
+ *   - Button is disabled when dirtyGameIds.length === 0 (D-08)
+ *   - Button is enabled when dirtyGameIds.length > 0
  *   - Button calls startSync() on click when enabled
  *
  * Covers requirements: SYNC-01, SYNC-02
@@ -27,8 +27,7 @@ const mockMarkUnplayed = vi.fn()
 const mockShowRankedList = vi.fn()
 const mockShowUnplayedList = vi.fn()
 
-let mockComparisonsTotal = 5
-let mockComparisonsAtLastSync = 0
+let mockDirtyGameIds: string[] = ['g0']
 let mockSessionId: string | null = 'test-session-id'
 
 vi.mock('../store/store', () => ({
@@ -36,11 +35,10 @@ vi.mock('../store/store', () => ({
     selector({
       currentPair: ['g0', 'g1'],
       sessionComparisons: 3,
-      comparisonsTotal: mockComparisonsTotal,
-      comparisonsAtLastSync: mockComparisonsAtLastSync,
+      comparisonsTotal: 5,
       sessionUsername: 'alice',
       sessionId: mockSessionId,
-      syncedGameIds: [],
+      dirtyGameIds: mockDirtyGameIds,
       unplayedIds: [],
       startSync: mockStartSync,
       pick: mockPick,
@@ -61,8 +59,7 @@ import ComparisonView from './ComparisonView'
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockComparisonsTotal = 5
-  mockComparisonsAtLastSync = 0
+  mockDirtyGameIds = ['g0']
   mockSessionId = 'test-session-id'
 })
 
@@ -77,23 +74,20 @@ describe('ComparisonView Sync to BGG button (SYNC-01, SYNC-02, D-05, D-08)', () 
   })
 
   it('Sync to BGG button is always rendered regardless of disabled state', () => {
-    mockComparisonsTotal = 5
-    mockComparisonsAtLastSync = 5 // would be disabled
+    mockDirtyGameIds = [] // would be disabled
     render(<ComparisonView />)
     expect(screen.getByRole('button', { name: /sync to bgg/i })).toBeInTheDocument()
   })
 
-  it('Sync to BGG button is enabled when comparisonsTotal > comparisonsAtLastSync (D-08)', () => {
-    mockComparisonsTotal = 5
-    mockComparisonsAtLastSync = 3
+  it('Sync to BGG button is enabled when dirtyGameIds is non-empty (D-08)', () => {
+    mockDirtyGameIds = ['g0', 'g1']
     render(<ComparisonView />)
     const btn = screen.getByRole('button', { name: /sync to bgg/i })
     expect(btn).not.toBeDisabled()
   })
 
-  it('Sync to BGG button is disabled when comparisonsTotal === comparisonsAtLastSync (D-08)', () => {
-    mockComparisonsTotal = 5
-    mockComparisonsAtLastSync = 5
+  it('Sync to BGG button is disabled when dirtyGameIds is empty (D-08)', () => {
+    mockDirtyGameIds = []
     render(<ComparisonView />)
     const btn = screen.getByRole('button', { name: /sync to bgg/i })
     expect(btn).toBeDisabled()
@@ -101,16 +95,14 @@ describe('ComparisonView Sync to BGG button (SYNC-01, SYNC-02, D-05, D-08)', () 
 
   it('Sync to BGG button is disabled when sessionId is null (D-04 — no auth on return visit)', () => {
     mockSessionId = null
-    mockComparisonsTotal = 5
-    mockComparisonsAtLastSync = 0
+    mockDirtyGameIds = ['g0']
     render(<ComparisonView />)
     const btn = screen.getByRole('button', { name: /sync to bgg/i })
     expect(btn).toBeDisabled()
   })
 
   it('clicking Sync to BGG button calls startSync() (SYNC-01)', () => {
-    mockComparisonsTotal = 5
-    mockComparisonsAtLastSync = 0
+    mockDirtyGameIds = ['g0']
     render(<ComparisonView />)
     fireEvent.click(screen.getByRole('button', { name: /sync to bgg/i }))
     expect(mockStartSync).toHaveBeenCalledTimes(1)

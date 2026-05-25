@@ -10,19 +10,18 @@ import UnplayedListView from './components/UnplayedListView'
 
 function App() {
   const view = useStore(s => s.view)
-  const comparisonsTotal = useStore(s => s.comparisonsTotal)
-  const comparisonsAtLastSync = useStore(s => s.comparisonsAtLastSync)
+  const dirtyGameIds = useStore(s => s.dirtyGameIds)
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault()
       e.returnValue = ''
     }
-    if (comparisonsTotal > comparisonsAtLastSync) {
+    if (dirtyGameIds.length > 0) {
       window.addEventListener('beforeunload', handleBeforeUnload)
     }
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [comparisonsTotal, comparisonsAtLastSync])
+  }, [dirtyGameIds.length])
 
   return (
     <div className="bg-gray-50 min-h-screen">

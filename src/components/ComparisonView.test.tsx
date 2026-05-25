@@ -26,6 +26,7 @@ const mockRefresh = vi.fn()
 
 let mockComparisonsTotal = 5
 let mockComparisonsAtLastSync = 0
+let mockSessionId: string | null = 'test-session-id'
 
 vi.mock('../store/store', () => ({
   useStore: (selector: (s: Record<string, unknown>) => unknown) =>
@@ -35,6 +36,7 @@ vi.mock('../store/store', () => ({
       comparisonsTotal: mockComparisonsTotal,
       comparisonsAtLastSync: mockComparisonsAtLastSync,
       sessionUsername: 'alice',
+      sessionId: mockSessionId,
       startSync: mockStartSync,
       pick: mockPick,
       skip: mockSkip,
@@ -53,6 +55,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mockComparisonsTotal = 5
   mockComparisonsAtLastSync = 0
+  mockSessionId = 'test-session-id'
 })
 
 // ---------------------------------------------------------------------------
@@ -83,6 +86,15 @@ describe('ComparisonView Sync to BGG button (SYNC-01, SYNC-02, D-05, D-08)', () 
   it('Sync to BGG button is disabled when comparisonsTotal === comparisonsAtLastSync (D-08)', () => {
     mockComparisonsTotal = 5
     mockComparisonsAtLastSync = 5
+    render(<ComparisonView />)
+    const btn = screen.getByRole('button', { name: /sync to bgg/i })
+    expect(btn).toBeDisabled()
+  })
+
+  it('Sync to BGG button is disabled when sessionId is null (D-04 — no auth on return visit)', () => {
+    mockSessionId = null
+    mockComparisonsTotal = 5
+    mockComparisonsAtLastSync = 0
     render(<ComparisonView />)
     const btn = screen.getByRole('button', { name: /sync to bgg/i })
     expect(btn).toBeDisabled()

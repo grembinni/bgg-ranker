@@ -11,6 +11,7 @@ export default function ComparisonView() {
   const skip = useStore(s => s.skip)
   const refresh = useStore(s => s.refresh)
   const startSync = useStore(s => s.startSync)
+  const sessionId = useStore(s => s.sessionId)
 
   if (currentPair === null) {
     return (
@@ -30,7 +31,7 @@ export default function ComparisonView() {
         <button
           type="button"
           onClick={startSync}
-          disabled={comparisonsTotal === comparisonsAtLastSync}
+          disabled={!sessionId || comparisonsTotal === comparisonsAtLastSync}
           className="px-4 py-1.5 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Sync to BGG

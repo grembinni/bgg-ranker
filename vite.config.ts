@@ -25,8 +25,13 @@ export default defineConfig(({ mode }) => {
               if (req.url?.includes('/login/api/v1')) return
               // Remove X-BGG-Session — dev proxy injects the full stored cookie string instead.
               // (Production: Firebase Function handles X-BGG-Session separately.)
-              const xBggSession = req.headers['x-bgg-session'] as string | undefined
+              const xBggSessionRaw = req.headers['x-bgg-session'] as string | undefined
               proxyReq.removeHeader('x-bgg-session')
+              // Sanitize before cookie injection — reject values with chars outside [A-Za-z0-9_-]
+              // to prevent CRLF or semicolon injection into the forwarded Cookie header (CR-02).
+              const xBggSession = xBggSessionRaw && /^[A-Za-z0-9_-]+$/.test(xBggSessionRaw)
+                ? xBggSessionRaw
+                : undefined
               // Fallback: when proxySession is null (dev server restarted after login),
               // construct a minimal SessionID cookie from the X-BGG-Session header value.
               // This keeps write requests authenticated on the /api/geekrating path (T-03.1-01).

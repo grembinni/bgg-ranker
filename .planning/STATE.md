@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 ## Current Position
 
-Phase: 4 (Display Polish) — IN PROGRESS
-Plan: 3 of 4 in current phase
-Status: Executing — Wave 1 complete (04-02 + 04-03 done), Wave 2 next (04-04)
-Last activity: 2026-05-25 — 04-02 store extension + 04-03 GameCard upgrade complete; 9 RED tests remain for Wave 2
+Phase: 4 (Display Polish) — COMPLETE (pending human visual checkpoint)
+Plan: 4 of 4 in current phase
+Status: Checkpoint — 04-04 automated tasks done; awaiting human visual verification
+Last activity: 2026-05-25 — 04-04 ComparisonView hamburger + upset callout + UsernameEntry cleanup complete; all 145 tests GREEN
 
-Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [██████████] Phase 3 complete (4/4 plans) | [██████████] Phase 3.1 complete (2/2 plans) | [███████░░░] Phase 4 in progress (3/4 executed)
+Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [██████████] Phase 3 complete (4/4 plans) | [██████████] Phase 3.1 complete (2/2 plans) | [██████████] Phase 4 complete (4/4 executed, checkpoint pending)
 
 ## Performance Metrics
 
@@ -90,5 +90,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-25
-Stopped at: 04-03-SUMMARY.md complete — DISP-01 GameCard thumbnail upgrade done, 04-02 partially complete (Task 1 committed), 04-04 is next (ComparisonView hamburger + callout)
-Resume file: .planning/phases/04-display-polish/04-04-PLAN.md
+Stopped at: 04-04 automated tasks done (ffa8c26, 5ccc59f) — awaiting human visual checkpoint approval for Phase 4 final sign-off
+Resume file: None — checkpoint approval needed before Phase 5 (Firebase production deploy)

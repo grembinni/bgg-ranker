@@ -32,7 +32,7 @@ Plans:
 - [x] 04-01-PLAN.md — extend existing test files with failing Phase 4 describe blocks (TDD RED)
 
 **Wave 1** *(blocked on Wave 0 completion — parallel)*
-- [ ] 04-02-PLAN.md — store extension: lastUpset field, pick() upset detection, login() auto-resume, logout()
+- [x] 04-02-PLAN.md — store extension: lastUpset field, pick() upset detection, login() auto-resume, logout()
 - [x] 04-03-PLAN.md — GameCard upgrade: h-48 thumbnail, BGG page link, gray placeholder, #N rank (DISP-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*

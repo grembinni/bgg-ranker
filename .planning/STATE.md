@@ -11,8 +11,8 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 Phase: 4 (Display Polish) — IN PROGRESS
 Plan: 3 of 4 in current phase
-Status: Executing — Wave 0 complete (04-01 done), Wave 1: 04-02 started, 04-03 complete
-Last activity: 2026-05-25 — 04-03 GameCard thumbnail upgrade complete (DISP-01 GREEN)
+Status: Executing — Wave 1 complete (04-02 + 04-03 done), Wave 2 next (04-04)
+Last activity: 2026-05-25 — 04-02 store extension + 04-03 GameCard upgrade complete; 9 RED tests remain for Wave 2
 
 Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [██████████] Phase 3 complete (4/4 plans) | [██████████] Phase 3.1 complete (2/2 plans) | [███████░░░] Phase 4 in progress (3/4 executed)
 

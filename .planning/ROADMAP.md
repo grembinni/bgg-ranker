@@ -33,7 +33,7 @@ Plans:
 
 **Wave 1** *(blocked on Wave 0 completion — parallel)*
 - [ ] 04-02-PLAN.md — store extension: lastUpset field, pick() upset detection, login() auto-resume, logout()
-- [ ] 04-03-PLAN.md — GameCard upgrade: h-48 thumbnail, BGG page link, gray placeholder, #N rank (DISP-01)
+- [x] 04-03-PLAN.md — GameCard upgrade: h-48 thumbnail, BGG page link, gray placeholder, #N rank (DISP-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 04-04-PLAN.md — ComparisonView hamburger + upset callout; UsernameEntry continue-prompt removal
@@ -73,5 +73,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Collection & Ranking | 3/3 | Complete | 2026-05-23 |
 | 3. Auth & BGG Sync | 4/4 | Complete | 2026-05-24 |
 | 3.1. Sync Repair | 2/2 | Complete | 2026-05-25 |
-| 4. Display Polish | 1/4 | In Progress | - |
+| 4. Display Polish | 3/4 | In Progress | - |
 | 5. Firebase Production Deploy | 0/1 | Not started | - |

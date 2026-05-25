@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 ## Current Position
 
 Phase: 4 (Display Polish) — IN PROGRESS
-Plan: 1 of 4 in current phase
-Status: Executing — Wave 0 complete (04-01 done), Wave 1 next (04-02)
-Last activity: 2026-05-25 — 04-01 Wave 0 RED phase complete
+Plan: 3 of 4 in current phase
+Status: Executing — Wave 0 complete (04-01 done), Wave 1: 04-02 started, 04-03 complete
+Last activity: 2026-05-25 — 04-03 GameCard thumbnail upgrade complete (DISP-01 GREEN)
 
-Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [██████████] Phase 3 complete (4/4 plans) | [██████████] Phase 3.1 complete (2/2 plans) | [███░░░░░░░] Phase 4 in progress (1/4 executed)
+Progress: [██████████] Phase 1 complete | [██████████] Phase 2 complete (3/3 plans) | [██████████] Phase 3 complete (4/4 plans) | [██████████] Phase 3.1 complete (2/2 plans) | [███████░░░] Phase 4 in progress (3/4 executed)
 
 ## Performance Metrics
 
@@ -28,10 +28,10 @@ Progress: [██████████] Phase 1 complete | [█████�
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 3.1 | 1 | 3 min | 3 min |
-| 4 | 1 | 15 min | 15 min |
+| 4 | 3 | ~21 min | ~7 min |
 
 **Recent Trend:**
-- Last 5 plans: 03.1-01 (~3 min), 04-01 (~15 min)
+- Last 5 plans: 03.1-01 (~3 min), 04-01 (~15 min), 04-02 (partial), 04-03 (~6 min)
 - Trend: —
 
 *Updated after each plan completion*
@@ -62,6 +62,8 @@ Recent decisions affecting current work:
 - Phase 4.01: Wave 0 RED tests use dynamic let variables in vi.mock factory (mockLastUpset, mockCurrentPair captured by reference)
 - Phase 4.01: Upset detection positions use explicit ratings for deterministic assertions (g3=900/g2=700/g1=500/g0=300)
 - Phase 4.01: login auto-resume tests that verify current behavior intentionally pass at RED — only the new skip-fetch path fails
+- Phase 4.03: aspect-square added to both img and placeholder div for consistent 192px square card sizing
+- Phase 4.03: totalGames variable removed from GameCard (ratings selector retained for getRankPosition); rank display simplified to "#N"
 
 ### Pending Todos
 
@@ -88,5 +90,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-25
-Stopped at: 04-01-SUMMARY.md complete — Wave 0 RED phase done, ready for 04-02 (Wave 1: store + GameCard implementation)
-Resume file: .planning/phases/04-display-polish/04-02-PLAN.md
+Stopped at: 04-03-SUMMARY.md complete — DISP-01 GameCard thumbnail upgrade done, 04-02 partially complete (Task 1 committed), 04-04 is next (ComparisonView hamburger + callout)
+Resume file: .planning/phases/04-display-polish/04-04-PLAN.md

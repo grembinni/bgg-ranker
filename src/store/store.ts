@@ -70,6 +70,7 @@ interface ComparisonStateSlice {
   syncStatus: 'idle' | 'syncing' | 'session-expired' | 'error' | 'complete' // Q3
   syncProgress: number  // games written so far in current sync batch
   syncTotal: number     // total games to write in current sync batch
+  lastUpset: { winnerName: string; spotsGained: number } | null  // D-03: session-only, not persisted
 }
 
 interface AppActions {
@@ -93,6 +94,7 @@ interface AppActions {
   completeSyncAll(): void
   reAuthAndResume(password: string): Promise<void>
   cancelSync(): void
+  logout(): void
 }
 
 export type AppStore = SessionStateSlice &
@@ -151,6 +153,12 @@ function delay(ms: number): Promise<void> {
  */
 let completeSyncTimer: ReturnType<typeof setTimeout> | null = null
 
+/**
+ * upsetTimer — Tracks the setTimeout handle for clearing lastUpset after 5 seconds (D-03).
+ * Module-level to allow cancellation across rapid picks (Pitfall 1).
+ */
+let upsetTimer: ReturnType<typeof setTimeout> | null = null
+
 // ---------------------------------------------------------------------------
 // Store factory (injectable storage for testing)
 // ---------------------------------------------------------------------------
@@ -191,6 +199,7 @@ export function createAppStore(rawStorage: StateStorage) {
         syncStatus: 'idle',
         syncProgress: 0,
         syncTotal: 0,
+        lastUpset: null,
 
         // --- Actions ---
 
@@ -199,18 +208,8 @@ export function createAppStore(rawStorage: StateStorage) {
         },
 
         async fetchCollection(username: string): Promise<void> {
-          const state = get()
-
-          // PERSIST-02 guard (D-09): returning user with matching stored rankings
-          if (
-            state.rankingsUsername === username &&
-            Object.keys(state.ratings).length > 0 &&
-            Object.keys(state.games).length > 0
-          ) {
-            // D-10: show continue-or-refetch prompt by staying on entry view
-            set({ sessionUsername: username, view: 'entry' })
-            return
-          }
+          // PERSIST-02 guard moved to login() for D-07 auto-resume (Pitfall 3)
+          // fetchCollection always proceeds to fetch from this point
 
           // New user or no stored rankings — proceed to fetch
           set({
@@ -315,6 +314,7 @@ export function createAppStore(rawStorage: StateStorage) {
 
         resetForNewUser(): void {
           if (completeSyncTimer) { clearTimeout(completeSyncTimer); completeSyncTimer = null }
+          if (upsetTimer) { clearTimeout(upsetTimer); upsetTimer = null }
           set({
             ratings: {},
             games: {},
@@ -333,7 +333,13 @@ export function createAppStore(rawStorage: StateStorage) {
         },
 
         pick(winnerId: string, loserId: string): void {
-          const { ratings, comparisonsTotal, skipQueue, sessionComparisons, dirtyGameIds } = get()
+          const { ratings, comparisonsTotal, skipQueue, sessionComparisons, dirtyGameIds, games } = get()
+
+          // Compute pre-upset positions (Pitfall 2: MUST be before applyUpset call)
+          const ranked = Object.entries(ratings).sort((a, b) => b[1] - a[1])
+          const winnerPos = ranked.findIndex(([id]) => id === winnerId)
+          const loserPos = ranked.findIndex(([id]) => id === loserId)
+
           const newRatings = applyUpset(winnerId, loserId, ratings)
           const newQueue = skipQueue.length > 0 ? skipQueue.slice(1) : skipQueue
           // Delegate to selectRandomPair with the pre-drain queue so it returns
@@ -342,6 +348,21 @@ export function createAppStore(rawStorage: StateStorage) {
           // Diff old vs new ratings to find only changed game IDs (precise dirty marking)
           const changed = Object.keys(newRatings).filter(id => newRatings[id] !== ratings[id])
           const newDirty = [...new Set([...dirtyGameIds, ...changed])]
+
+          // Upset detection (D-01): winner was ranked lower than loser before this pick
+          let newLastUpset: { winnerName: string; spotsGained: number } | null = null
+          if (winnerPos > loserPos && winnerPos !== -1 && loserPos !== -1) {
+            const spotsGained = winnerPos - loserPos
+            const winnerName = games[winnerId]?.name ?? winnerId
+            newLastUpset = { winnerName, spotsGained }
+            // Cancel previous timer before setting new one (Pitfall 1: timer leak on rapid picks)
+            if (upsetTimer) { clearTimeout(upsetTimer); upsetTimer = null }
+            upsetTimer = setTimeout(() => {
+              upsetTimer = null
+              set({ lastUpset: null })
+            }, 5000)
+          }
+
           set({
             ratings: newRatings,
             comparisonsTotal: comparisonsTotal + 1,
@@ -349,6 +370,7 @@ export function createAppStore(rawStorage: StateStorage) {
             currentPair: nextPair,
             skipQueue: newQueue,
             dirtyGameIds: newDirty,
+            lastUpset: newLastUpset,
           })
         },
 
@@ -424,9 +446,20 @@ export function createAppStore(rawStorage: StateStorage) {
           set({ view: 'loading', loadingMessage: 'Logging in to BGG…', errorMessage: null })
           try {
             const result = await bggLogin(username, password)
-            set({ sessionId: result.sessionId, loadingMessage: 'Fetching your games…' })
-            // Delegate collection fetch to existing action (D-03 sequential messages)
-            await get().fetchCollection(username)
+            set({ sessionId: result.sessionId, sessionUsername: username })
+
+            // D-07: auto-resume if stored rankings belong to this user (PERSIST-02 guard)
+            const state = get()
+            if (
+              state.rankingsUsername === username &&
+              Object.keys(state.ratings).length > 0 &&
+              Object.keys(state.games).length > 0
+            ) {
+              get().continueSession()
+            } else {
+              set({ loadingMessage: 'Fetching your games…' })
+              await get().fetchCollection(username)
+            }
           } catch {
             set({
               view: 'error',
@@ -534,6 +567,14 @@ export function createAppStore(rawStorage: StateStorage) {
           // dirtyGameIds retains remaining un-synced IDs — resume picks them up on next startSync
           if (completeSyncTimer) { clearTimeout(completeSyncTimer); completeSyncTimer = null }
           set({ sessionId: null, view: 'comparison', syncStatus: 'idle' })
+        },
+
+        logout(): void {
+          // Cancel any in-flight sync (idempotent — sets sessionId=null which aborts startSync loop)
+          get().cancelSync()
+          // Clear session fields; do NOT clear ratings/games/rankingsUsername (D-08)
+          // Re-login with same username will auto-resume via login() PERSIST-02 guard (D-07)
+          set({ sessionId: null, sessionUsername: null, view: 'entry' })
         },
       }),
       {

@@ -469,8 +469,8 @@ export function createAppStore(rawStorage: StateStorage) {
               return
             }
 
-            // Throttle: 200–500ms random delay between writes (SYNC-02, T-03-05)
-            await delay(200 + Math.floor(Math.random() * 300))
+            // Throttle: fixed 1000ms delay between writes (SYNC-02, T-03-05)
+            await delay(1000)
           }
 
           get().completeSyncAll()

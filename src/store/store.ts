@@ -418,10 +418,19 @@ export function createAppStore(rawStorage: StateStorage) {
         },
 
         async reAuthAndResume(password: string): Promise<void> {
-          const result = await bggLogin(get().sessionUsername!, password)
-          set({ sessionId: result.sessionId, syncStatus: 'syncing' })
-          // Resume from where sync left off — syncedGameIds tracks already-sent games (D-10)
-          await get().startSync()
+          const username = get().sessionUsername
+          if (!username) {
+            set({ syncStatus: 'error' })
+            return
+          }
+          try {
+            const result = await bggLogin(username, password)
+            set({ sessionId: result.sessionId, syncStatus: 'syncing' })
+            // Resume from where sync left off — syncedGameIds tracks already-sent games (D-10)
+            await get().startSync()
+          } catch {
+            set({ syncStatus: 'error' })
+          }
         },
 
         cancelSync(): void {

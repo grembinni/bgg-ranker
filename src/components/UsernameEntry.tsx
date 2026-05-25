@@ -8,18 +8,6 @@ export default function UsernameEntry() {
   const [passwordError, setPasswordError] = useState<string | null>(null)
 
   const login = useStore((s) => s.login)
-  const continueSession = useStore((s) => s.continueSession)
-  const resetForNewUser = useStore((s) => s.resetForNewUser)
-  const sessionUsername = useStore((s) => s.sessionUsername)
-  const rankingsUsername = useStore((s) => s.rankingsUsername)
-  const ratings = useStore((s) => s.ratings)
-
-  const showContinuePrompt =
-    sessionUsername !== null &&
-    sessionUsername === rankingsUsername &&
-    Object.keys(ratings).length > 0
-
-  const ratingsCount = Object.keys(ratings).length
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -98,29 +86,6 @@ export default function UsernameEntry() {
         </button>
       </form>
 
-      {showContinuePrompt && (
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <p className="text-base text-gray-700">
-            Found {ratingsCount} ranked games from your last session.
-          </p>
-          <div className="flex gap-4 mt-4">
-            <button
-              type="button"
-              onClick={continueSession}
-              className="px-6 py-2 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
-            >
-              Continue ranking
-            </button>
-            <button
-              type="button"
-              onClick={resetForNewUser}
-              className="px-6 py-2 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
-            >
-              Re-fetch collection
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

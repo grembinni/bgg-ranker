@@ -349,6 +349,7 @@ export function createAppStore(rawStorage: StateStorage) {
               view: 'error',
               errorMessage: 'Could not log in. Check your username and password.',
               loadingMessage: null,
+              sessionId: null,   // discard orphaned token on login failure
             })
           }
         },

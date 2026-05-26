@@ -657,6 +657,42 @@ describe('startSync action (SYNC-01, SYNC-02)', () => {
   })
 })
 
+describe('startSync throttle (SYNC-02)', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('startSync() applies 500ms delay between writes — second write fires only after 500ms (SYNC-02)', async () => {
+    vi.useFakeTimers()
+    vi.mocked(mockBggRateGame).mockResolvedValue(undefined)
+
+    const store = createAppStore(createMockStorage())
+    store.setState({
+      ratings: { g0: 900, g1: 901 },
+      sessionId: 'active-session',
+      dirtyGameIds: ['g0', 'g1'],
+      games: {
+        g0: { id: 'g0', collId: 'coll-g0', name: 'G0', yearPublished: 2020, thumbnail: '' },
+        g1: { id: 'g1', collId: 'coll-g1', name: 'G1', yearPublished: 2020, thumbnail: '' },
+      },
+    } as Parameters<typeof store.setState>[0])
+
+    const syncPromise = store.getState().startSync()
+
+    // First write (g0) fires immediately; delay(500) blocks second write
+    await vi.advanceTimersByTimeAsync(499)
+    expect(vi.mocked(mockBggRateGame)).toHaveBeenCalledTimes(1)
+
+    // Cross the 500ms threshold — second write fires
+    await vi.advanceTimersByTimeAsync(1)
+    expect(vi.mocked(mockBggRateGame)).toHaveBeenCalledTimes(2)
+
+    // Drain completeSyncAll's 2000ms auto-return timer
+    await vi.advanceTimersByTimeAsync(2000)
+    await syncPromise
+  })
+})
+
 describe('markGameSynced action (SYNC-03)', () => {
   it('markGameSynced("g123") removes "g123" from dirtyGameIds (SYNC-03)', () => {
     const store = createAppStore(createMockStorage())

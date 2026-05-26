@@ -2,12 +2,12 @@ import { onRequest } from 'firebase-functions/v2/https'
 import * as https from 'node:https'
 import * as http from 'node:http'
 
-// Forward all requests to BGG — path supplied as ?path= query param
-// Example: GET https://<fn-url>/bgg?path=/xmlapi2/collection?username=X
+// Forward all requests to BGG — path extracted from req.path after the function prefix
+// Example: GET https://<fn-url>/bgg/xmlapi2/collection?username=X
 export const bgg = onRequest(
   { cors: true, region: 'us-central1' },
   async (req, res) => {
-    const targetPath = (req.query['path'] as string) || '/'
+    const targetPath = req.path || '/'
     const isLogin = targetPath.startsWith('/login')
 
     const options: https.RequestOptions = {

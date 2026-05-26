@@ -1009,12 +1009,9 @@ describe('moveUnplayedToRanked() dirty tracking (SYNC-03)', () => {
   })
 })
 
-describe('login() always fetches from BGG', () => {
-  it('always calls fetchCollection regardless of stored rankings — BGG is authoritative', async () => {
+describe('login() auto-resume (D-07)', () => {
+  it('skips fetchCollection and calls continueSession when same user has stored data', async () => {
     vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'sess123' })
-    vi.mocked(mockBggFetch).mockResolvedValueOnce([
-      { id: 'g0', collId: 'c0', name: 'Game 0', yearPublished: 2020, thumbnail: '', userRating: 7 },
-    ])
 
     const store = createAppStore(createMockStorage())
     store.setState({
@@ -1025,24 +1022,44 @@ describe('login() always fetches from BGG', () => {
 
     await store.getState().login('alice', 'pw')
 
-    expect(vi.mocked(mockBggFetch)).toHaveBeenCalledWith('alice', 'sess123')
+    expect(vi.mocked(mockBggFetch)).not.toHaveBeenCalled()
     expect(store.getState().view).toBe('comparison')
   })
 
-  it('rebuilds rankings from BGG even when same user returns with stored data', async () => {
+  it('preserves existing ratings on auto-resume (comparisonsTotal not reset)', async () => {
     vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'sess123' })
-    vi.mocked(mockBggFetch).mockResolvedValueOnce([
-      { id: 'new0', collId: 'c0', name: 'Game 0', yearPublished: 2020, thumbnail: '', userRating: 8 },
-      { id: 'new1', collId: 'c1', name: 'Game 1', yearPublished: 2021, thumbnail: '', userRating: 6 },
-    ])
 
     const store = createAppStore(createMockStorage())
-    store.setState({ rankingsUsername: 'alice', ratings: { old: 500 }, games: makeGames(1) })
+    store.setState({
+      rankingsUsername: 'alice',
+      ratings: makeRatings(3),
+      games: makeGames(3),
+      comparisonsTotal: 42,
+    })
 
     await store.getState().login('alice', 'pw')
 
-    expect('old' in store.getState().ratings).toBe(false)
-    expect(Object.keys(store.getState().ratings).length).toBe(2)
+    expect(store.getState().comparisonsTotal).toBe(42)
+    expect(Object.keys(store.getState().ratings).length).toBe(3)
+  })
+
+  it('fetches from BGG when stored rankings belong to a different user', async () => {
+    vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'sess123' })
+    vi.mocked(mockBggFetch).mockResolvedValueOnce([
+      { id: 'g0', collId: 'c0', name: 'Game 0', yearPublished: 2020, thumbnail: '', userRating: 7 },
+    ])
+
+    const store = createAppStore(createMockStorage())
+    store.setState({
+      rankingsUsername: 'bob',
+      ratings: makeRatings(3),
+      games: makeGames(3),
+    })
+
+    await store.getState().login('alice', 'pw')
+
+    expect(vi.mocked(mockBggFetch)).toHaveBeenCalledWith('alice', 'sess123')
+    expect(store.getState().view).toBe('comparison')
   })
 
   it('places N/A-rated games (userRating null) into unplayedIds, not ratings', async () => {

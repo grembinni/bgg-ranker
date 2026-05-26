@@ -395,6 +395,15 @@ export function createAppStore(rawStorage: StateStorage) {
           try {
             const result = await bggLogin(username, password)
             set({ sessionId: result.sessionId, sessionUsername: username })
+            const { rankingsUsername, ratings, games } = get()
+            if (
+              rankingsUsername === username &&
+              Object.keys(ratings).length > 0 &&
+              Object.keys(games).length > 0
+            ) {
+              get().continueSession()
+              return
+            }
             set({ loadingMessage: 'Fetching your games…' })
             await get().fetchCollection(username)
           } catch {

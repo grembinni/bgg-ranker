@@ -1009,6 +1009,23 @@ describe('moveUnplayedToRanked() dirty tracking (SYNC-03)', () => {
   })
 })
 
+// D-14: verified covered by moveUnplayedToRanked() dirty tracking (SYNC-03) describe block above — no additional test needed
+describe('showRankedGrid() action (D-02)', () => {
+  it('sets view to ranked-grid from comparison', () => {
+    const store = createAppStore(createMockStorage())
+    store.setState({ view: 'comparison' })
+    store.getState().showRankedGrid()
+    expect(store.getState().view).toBe('ranked-grid')
+  })
+
+  it('backToComparison() returns from ranked-grid to comparison', () => {
+    const store = createAppStore(createMockStorage())
+    store.setState({ view: 'ranked-grid' })
+    store.getState().backToComparison()
+    expect(store.getState().view).toBe('comparison')
+  })
+})
+
 describe('login() auto-resume (D-07)', () => {
   it('skips fetchCollection and calls continueSession when same user has stored data', async () => {
     vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'sess123' })

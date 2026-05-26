@@ -73,7 +73,7 @@ export default function RankedGridView() {
   const orderedIds = localOrder ?? sortedFromStore
 
   const safeOffset = Math.min(pageOffset, Math.max(0, orderedIds.length - 1))
-  const pageSlice = orderedIds.slice(safeOffset, safeOffset + 100)
+  const pageSlice = orderedIds.slice(safeOffset, safeOffset + 150)
 
   const sensors = useSensors(useSensor(PointerSensor))
 
@@ -108,7 +108,7 @@ export default function RankedGridView() {
     preloadImages(visible)
 
     const incoming = orderedIds
-      .slice(safeOffset + 50, safeOffset + 150)
+      .slice(safeOffset + 50, safeOffset + 200)
       .map(id => games[id]?.thumbnail)
       .filter((t): t is string => Boolean(t))
     preloadImages(incoming)
@@ -138,12 +138,12 @@ export default function RankedGridView() {
           ← Prev 50
         </button>
         <span className="text-sm text-gray-600">
-          Rankings {safeOffset + 1}–{Math.min(safeOffset + 100, orderedIds.length)} of {orderedIds.length}
+          Rankings {safeOffset + 1}–{Math.min(safeOffset + 150, orderedIds.length)} of {orderedIds.length}
         </span>
         <button
           type="button"
           onClick={() => setPageOffset(Math.min(safeOffset + 50, Math.max(0, orderedIds.length - 1)))}
-          disabled={safeOffset + 100 >= orderedIds.length}
+          disabled={safeOffset + 150 >= orderedIds.length}
           className="px-3 py-1.5 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed outline-2 outline-offset-2 outline-blue-600"
         >
           Next 50 →

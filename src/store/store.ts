@@ -467,7 +467,7 @@ export function createAppStore(rawStorage: StateStorage) {
             }
 
             // Throttle between writes — skip delay after the last game
-            if (i < syncQueue.length - 1) await delay(1000)
+            if (i < syncQueue.length - 1) await delay(500)
           }
 
           get().completeSyncAll()

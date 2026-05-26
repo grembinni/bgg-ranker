@@ -9,7 +9,7 @@ export class TierCapacityError extends Error {
 }
 
 // index 0 = tier 10 (best), index 9 = tier 1 (worst); dual peak at indices 4 & 5 (tiers 6 & 5)
-export const TIER_WEIGHTS = [2, 6, 10, 14, 21, 21, 11, 8, 5, 2] as const
+export const TIER_WEIGHTS = [2, 6, 11, 15, 18, 18, 14, 9, 5, 2] as const
 
 // 99 unique values × 10 tiers
 export const MAX_GAMES = 990

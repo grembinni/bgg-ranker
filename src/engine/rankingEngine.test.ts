@@ -77,13 +77,13 @@ describe('computeTierAllocations — RANK-06 bell-curve distribution', () => {
     }
   })
 
-  it('indices 4 and 5 (tiers 6 and 5, weight 21 each) are tied for most games at n=100 (RANK-06)', () => {
+  it('indices 4 and 5 (tiers 6 and 5, weight 18 each) are tied for most games at n=100 (RANK-06)', () => {
     const allocs = computeTierAllocations(100)
     const max = Math.max(...allocs)
     expect(allocs[4]).toBe(max)
     expect(allocs[5]).toBe(max)
-    expect(allocs[4]).toBe(21)
-    expect(allocs[5]).toBe(21)
+    expect(allocs[4]).toBe(18)
+    expect(allocs[5]).toBe(18)
   })
 
   it('higher-weight tiers get more games than lower-weight tiers for small n (RANK-06)', () => {
@@ -92,7 +92,7 @@ describe('computeTierAllocations — RANK-06 bell-curve distribution', () => {
     expect(allocs[5]).toBeGreaterThan(allocs[9])
   })
 
-  it('single game goes to index 4 or 5 (tiers 6/5 tied at weight 21) (RANK-06)', () => {
+  it('single game goes to index 4 or 5 (tiers 6/5 tied at weight 18) (RANK-06)', () => {
     const allocs = computeTierAllocations(1, TIER_WEIGHTS)
     const total = allocs.reduce((a, b) => a + b, 0)
     expect(total).toBe(1)

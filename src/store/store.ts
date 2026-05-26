@@ -45,7 +45,7 @@ interface RankingsStateSlice {
 }
 
 interface ComparisonStateSlice {
-  view: 'entry' | 'loading' | 'comparison' | 'error' | 'syncing' | 'ranked-list' | 'unplayed-list'
+  view: 'entry' | 'loading' | 'comparison' | 'error' | 'syncing' | 'ranked-list' | 'unplayed-list' | 'ranked-grid'
   currentPair: [string, string] | null
   sessionComparisons: number
   skipQueue: Array<[string, string]>
@@ -70,6 +70,7 @@ interface AppActions {
   moveUnplayedToRanked(gameId: string, targetRank: number): void
   showRankedList(): void
   showUnplayedList(): void
+  showRankedGrid(): void
   backToComparison(): void
   login(username: string, password: string): Promise<void>
   startSync(): Promise<void>
@@ -388,6 +389,7 @@ export function createAppStore(rawStorage: StateStorage) {
 
         showRankedList(): void { set({ view: 'ranked-list' }) },
         showUnplayedList(): void { set({ view: 'unplayed-list' }) },
+        showRankedGrid(): void { set({ view: 'ranked-grid' }) },
         backToComparison(): void { set({ view: 'comparison' }) },
 
         async login(username: string, password: string): Promise<void> {

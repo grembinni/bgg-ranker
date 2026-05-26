@@ -9,9 +9,9 @@ See: .planning/PROJECT.md (updated 2026-05-26 after v1.0 milestone close)
 
 ## Current Position
 
-Phase: 4.1 (List View Cleanup) — Not started
-Status: Phase inserted; ready for /gsd:discuss-phase 4.1
-Last activity: 2026-05-26 — Phase 4.1 inserted (list view cleanup: grid view, hamburger, dirty-flag validation)
+Phase: 4.1 (List View Cleanup) — Planned (3 plans, ready to execute)
+Status: Planning complete; ready for /gsd:execute-phase 4.1
+Last activity: 2026-05-26 — Phase 4.1 planned (3 plans: store extension, RankedGridView component, App+ComparisonView wiring)
 
 Progress: [██████████] Phase 1 | [██████████] Phase 2 | [██████████] Phase 3 | [██████████] Phase 3.1 | [██████████] Phase 4 | [          ] Phase 5
 

@@ -62,5 +62,5 @@
 | 3. Auth & BGG Sync | v0.9 | 4/4 | Complete | 2026-05-24 |
 | 3.1. Sync Repair | v0.9 | 2/2 | Complete | 2026-05-25 |
 | 4. Display Polish | v1.0 | 4/4 | Complete | 2026-05-26 |
-| 4.1. List View Cleanup (INSERTED) | v1.1 | 0/TBD | Not started | — |
+| 4.1. List View Cleanup (INSERTED) | v1.1 | 0/3 | Planned | — |
 | 5. Firebase Deploy | v1.1 | 0/1 | Not started | — |

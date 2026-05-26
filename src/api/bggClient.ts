@@ -1,11 +1,3 @@
-/**
- * bggClient.ts — BGG XML API2 client with 202 polling and two-query merge.
- *
- * This is the ONLY module that imports `fetch` and `XMLParser`.
- * UI components never import from this file (per CLAUDE.md).
- * All functions return integer/string primitives (no Date objects, no Decimal types).
- */
-
 import { XMLParser } from 'fast-xml-parser'
 
 export const BGG_API_BASE: string = import.meta.env.VITE_BGG_API_BASE ?? ''
@@ -19,20 +11,13 @@ function decodeHtmlEntities(str: string): string {
     .replace(/&quot;/g, '"')
     .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
 }
+
 if (import.meta.env.DEV && !BGG_API_BASE) {
   console.warn('[bggClient] VITE_BGG_API_BASE is not set — all API calls will fail')
 }
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 const MAX_RETRIES = 8
 const RETRY_DELAY_MS = 3000
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 
 export interface RawGame {
   id: string
@@ -43,25 +28,10 @@ export interface RawGame {
   userRating: number | null  // BGG personal rating (1-10), null if unrated
 }
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-// ---------------------------------------------------------------------------
-// parseCollectionXml
-// ---------------------------------------------------------------------------
-
-/**
- * parseCollectionXml — Parse BGG XML API2 collection response into RawGame[].
- *
- * @param xmlText - Raw XML text from BGG API2 collection endpoint
- * @returns Array of RawGame objects
- * @throws Error if parsed game count is 0
- */
 export function parseCollectionXml(xmlText: string): RawGame[] {
   const parser = new XMLParser({
     ignoreAttributes: false,
@@ -104,17 +74,7 @@ export function parseCollectionXml(xmlText: string): RawGame[] {
   return games
 }
 
-// ---------------------------------------------------------------------------
-// mergeCollections
-// ---------------------------------------------------------------------------
-
-/**
- * mergeCollections — Merge owned and rated-unowned game arrays, owned entry wins on duplicate.
- *
- * @param owned - Games the user owns
- * @param ratedUnowned - Games the user has rated but does not own
- * @returns Merged array with owned entries first; duplicates removed (owned wins)
- */
+// Merge owned and rated-unowned arrays; owned entry wins on duplicate objectid.
 export function mergeCollections(owned: RawGame[], ratedUnowned: RawGame[]): RawGame[] {
   const ownedIds = new Set(owned.map((g) => g.id))
   const filtered = ratedUnowned.filter((g) => {
@@ -127,17 +87,7 @@ export function mergeCollections(owned: RawGame[], ratedUnowned: RawGame[]): Raw
   return [...owned, ...filtered]
 }
 
-// ---------------------------------------------------------------------------
-// poll202Loop
-// ---------------------------------------------------------------------------
-
-/**
- * poll202Loop — Fetch a URL, retrying on HTTP 202 up to MAX_RETRIES times.
- *
- * @param url - Fully constructed URL to poll
- * @returns XML text body on success
- * @throws Error on timeout, HTTP error, or HTML error page
- */
+// Fetch a URL, retrying on HTTP 202 up to MAX_RETRIES times.
 export async function poll202Loop(url: string, init?: RequestInit): Promise<string> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const res = await fetch(url, init)
@@ -164,22 +114,8 @@ export async function poll202Loop(url: string, init?: RequestInit): Promise<stri
   throw new Error('Poll loop exhausted')
 }
 
-// ---------------------------------------------------------------------------
-// bggLogin
-// ---------------------------------------------------------------------------
-
-/**
- * bggLogin — Authenticate with BGG and return a session token.
- *
- * In development the Vite proxy intercepts the /login/api/v1 response, extracts
- * the sessionid from Set-Cookie, and returns {sessionId: "..."} as a JSON body —
- * identical to what the Firebase Function does in production (D-07, Pattern 1, Pitfall 1).
- *
- * @param username - BGG username
- * @param password - BGG password (ephemeral — never stored outside Zustand; AUTH-03)
- * @returns {sessionId} — token to pass to bggRateGame as X-BGG-Session header
- * @throws Error on non-2xx or when sessionId is absent from response body
- */
+// Authenticate with BGG and return a session token.
+// The Vite proxy (dev) and Cloudflare Worker (prod) extract sessionid from Set-Cookie and return it as JSON.
 export async function bggLogin(
   username: string,
   password: string
@@ -202,22 +138,7 @@ export async function bggLogin(
   return { sessionId: data.sessionId }
 }
 
-// ---------------------------------------------------------------------------
-// bggRateGame
-// ---------------------------------------------------------------------------
-
-/**
- * bggRateGame — Write a single game rating to BGG via PUT /api/collectionitem/{collId}.
- *
- * ratingInt is integer-internal (e.g. 743 = 7.43). The float conversion happens
- * here — never stored or passed as a float anywhere else (D-10).
- *
- * @param collId - BGG collection-item ID (from @_collid in collection XML, not objectid)
- * @param objectId - BGG objectid (game ID) — included in the PUT body
- * @param ratingInt - Integer-internal rating (e.g. 743 represents 7.43); null removes the rating
- * @param sessionId - Session token from bggLogin; sent as X-BGG-Session header (D-18)
- * @throws Error with .status property on non-2xx response (caller detects 401 for session-expired)
- */
+// Write a single game rating to BGG. ratingInt is integer-internal (743 = 7.43); null removes the rating.
 export async function bggRateGame(
   collId: string,
   objectId: string,
@@ -246,7 +167,6 @@ export async function bggRateGame(
   if (!res.ok) {
     const text = await res.text().catch(() => '')
     console.error(`[bggRateGame] HTTP ${res.status} for collId ${collId} (objectId ${objectId}):`, text.slice(0, 200))
-    // Attach .status and .body so caller can surface diagnostic detail (D-18, Pattern 2)
     throw Object.assign(new Error('BGG write failed: HTTP ' + res.status), {
       status: res.status,
       body: text.slice(0, 120),
@@ -254,17 +174,7 @@ export async function bggRateGame(
   }
 }
 
-// ---------------------------------------------------------------------------
-// fetchCollection
-// ---------------------------------------------------------------------------
-
-/**
- * fetchCollection — Fetch and merge a user's owned and rated-unowned games from BGG API2.
- *
- * @param username - BGG username (raw, not yet percent-encoded)
- * @returns Merged RawGame[] array
- * @throws Propagates errors from poll202Loop and parseCollectionXml
- */
+// Fetch and merge a user's owned and rated-unowned games from BGG API2.
 export async function fetchCollection(username: string, sessionId?: string): Promise<RawGame[]> {
   const u = encodeURIComponent(username)
 
@@ -281,8 +191,8 @@ export async function fetchCollection(username: string, sessionId?: string): Pro
 
   const owned = parseCollectionXml(ownedXml)
 
-  // An empty rated-unowned result is valid — user may not have rated any unowned games.
-  // Catch the 0-game throw from the secondary query only; owned-query errors still propagate.
+  // An empty rated-unowned result is valid — user may have no rated unowned games.
+  // Only catch the secondary query's 0-game error; owned-query errors still propagate.
   let ratedUnowned: RawGame[]
   try {
     ratedUnowned = parseCollectionXml(ratedXml)

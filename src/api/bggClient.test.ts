@@ -1,15 +1,3 @@
-/**
- * bggClient.test.ts — Unit tests for the BGG API client
- *
- * Covers requirements: COLL-01, COLL-03
- * Each test name includes the relevant requirement ID for grep traceability.
- *
- * Threat model mitigations tested here:
- *   T-02-01: percent-encodes username in URL
- *   T-02-02: poll202Loop throws after MAX_RETRIES (8 retries = 9 attempts)
- *   T-02-03: poll202Loop rejects on HTML error page with HTTP 200
- *   T-02-04: fetchCollection does not mutate ratings on 0-game result
- */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   parseCollectionXml,
@@ -20,10 +8,6 @@ import {
   bggRateGame,
   type RawGame,
 } from './bggClient'
-
-// ---------------------------------------------------------------------------
-// Helper: build a minimal valid BGG API2 collection XML
-// ---------------------------------------------------------------------------
 
 function makeCollectionXml(
   items: Array<{ id: string; name: string; year: number; thumbnail?: string }>
@@ -42,10 +26,6 @@ function makeCollectionXml(
     .join('\n')
   return `<?xml version="1.0" encoding="utf-8"?>\n<items totalitems="${items.length}">\n${itemsXml}\n</items>`
 }
-
-// ---------------------------------------------------------------------------
-// parseCollectionXml (COLL-01)
-// ---------------------------------------------------------------------------
 
 describe('parseCollectionXml (COLL-01)', () => {
   it('extracts id, name, yearPublished, thumbnail from valid XML (COLL-01)', () => {
@@ -90,10 +70,6 @@ describe('parseCollectionXml (COLL-01)', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// mergeCollections (COLL-03)
-// ---------------------------------------------------------------------------
-
 describe('mergeCollections (COLL-03)', () => {
   it('owned entry wins when same objectid appears in both arrays (COLL-03)', () => {
     const owned: RawGame[] = [{ id: '100', collId: 'c1', name: 'Owned Name', yearPublished: 2020, thumbnail: 'owned.jpg', userRating: null }]
@@ -121,10 +97,6 @@ describe('mergeCollections (COLL-03)', () => {
     spy.mockRestore()
   })
 })
-
-// ---------------------------------------------------------------------------
-// poll202Loop (COLL-01)
-// ---------------------------------------------------------------------------
 
 describe('poll202Loop (COLL-01)', () => {
   beforeEach(() => {
@@ -175,11 +147,9 @@ describe('poll202Loop (COLL-01)', () => {
 
   it('throws after MAX_RETRIES (8) consecutive 202s (COLL-01)', async () => {
     const mockFetch = vi.mocked(fetch)
-    // Always return 202 — poll loop should exhaust 9 attempts (0 through 8)
     mockFetch.mockResolvedValue({ status: 202, ok: false, text: async () => '' } as Response)
 
     const resultPromise = poll202Loop('http://test')
-    // Advance timer 8 times (each 3000ms delay corresponds to an attempt that returned 202)
     for (let i = 0; i < 8; i++) {
       await vi.advanceTimersByTimeAsync(3000)
     }
@@ -212,10 +182,6 @@ describe('poll202Loop (COLL-01)', () => {
     await expect(resultPromise).rejects.toThrow(/HTML error page/i)
   })
 })
-
-// ---------------------------------------------------------------------------
-// fetchCollection (COLL-01, COLL-03)
-// ---------------------------------------------------------------------------
 
 describe('fetchCollection (COLL-01, COLL-03)', () => {
   beforeEach(() => {
@@ -281,10 +247,6 @@ describe('fetchCollection (COLL-01, COLL-03)', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// bggLogin (AUTH-01)
-// ---------------------------------------------------------------------------
-
 describe('bggLogin (AUTH-01)', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -331,10 +293,6 @@ describe('bggLogin (AUTH-01)', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// bggRateGame (SYNC-01)
-// ---------------------------------------------------------------------------
-
 describe('bggRateGame (SYNC-01)', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -370,7 +328,7 @@ describe('bggRateGame (SYNC-01)', () => {
     expect(headers['X-BGG-Session']).toBe('my-session-id')
   })
 
-  it('sends ratingInt/100 as JSON item.rating — ratingInt=743 sends 7.43 (SYNC-01, D-10)', async () => {
+  it('sends ratingInt/100 as JSON item.rating — ratingInt=743 sends 7.43 (SYNC-01)', async () => {
     const mockFetch = vi.mocked(fetch)
     mockFetch.mockResolvedValueOnce({ status: 200, ok: true } as Response)
 
@@ -402,7 +360,7 @@ describe('bggRateGame (SYNC-01)', () => {
     expect(result).toBeUndefined()
   })
 
-  it('throws with .status===401 when fetch returns 401 (SYNC-01, D-18)', async () => {
+  it('throws with .status===401 when fetch returns 401 (SYNC-01)', async () => {
     const mockFetch = vi.mocked(fetch)
     mockFetch.mockResolvedValueOnce({ status: 401, ok: false, text: () => Promise.resolve('') } as unknown as Response)
 

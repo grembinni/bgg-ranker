@@ -51,7 +51,7 @@ export default function ComparisonView() {
             ☰
           </button>
           {menuOpen && (
-            <div className="absolute left-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded shadow-sm z-10 flex flex-col">
+            <div className="absolute left-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded shadow-sm z-20 flex flex-col">
               <button
                 type="button"
                 onClick={handleSync}

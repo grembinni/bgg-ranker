@@ -1,14 +1,3 @@
-/**
- * store.test.ts — Unit tests for the Zustand app store
- *
- * Covers requirements: RANK-01, RANK-02, RANK-03, RANK-04, RANK-05, REFRESH-01, PERSIST-01, PERSIST-02
- * Each test name includes the relevant requirement ID for grep traceability.
- *
- * NOTE: vitest environment is 'node'. localStorage is NOT available in this environment.
- * All persist tests use a custom in-memory mock storage object (see createMockStorage below).
- * This approach avoids changing the global vitest.config.ts environment setting and keeps
- * existing engine tests unaffected (RESEARCH.md Pitfall 6).
- */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 vi.mock('../api/bggClient', () => ({
@@ -20,27 +9,15 @@ vi.mock('../api/bggClient', () => ({
 import { fetchCollection as mockBggFetch, bggLogin as mockBggLogin, bggRateGame as mockBggRateGame } from '../api/bggClient'
 import { createAppStore, selectRandomPair, type Game } from './store'
 
-// ---------------------------------------------------------------------------
-// Mock storage factory — in-memory replacement for localStorage
-// ---------------------------------------------------------------------------
-
 function createMockStorage() {
   const store: Record<string, string> = {}
   return {
     getItem: (k: string): string | null => store[k] ?? null,
-    setItem: (k: string, v: string): void => {
-      store[k] = v
-    },
-    removeItem: (k: string): void => {
-      delete store[k]
-    },
+    setItem: (k: string, v: string): void => { store[k] = v },
+    removeItem: (k: string): void => { delete store[k] },
     _dump: (): Record<string, string> => ({ ...store }),
   }
 }
-
-// ---------------------------------------------------------------------------
-// Helper: create n games keyed by g0..g{n-1}
-// ---------------------------------------------------------------------------
 
 function makeGames(n: number): Record<string, Game> {
   const games: Record<string, Game> = {}
@@ -56,32 +33,19 @@ function makeGames(n: number): Record<string, Game> {
   return games
 }
 
-// ---------------------------------------------------------------------------
-// Helper: create integer ratings keyed by g0..g{n-1}
-// ---------------------------------------------------------------------------
-
 function makeRatings(n: number): Record<string, number> {
   const ratings: Record<string, number> = {}
   for (let i = 0; i < n; i++) {
-    // Spread evenly from 1000 down, ensuring unique integer values
     ratings[`g${i}`] = 1000 - i * Math.floor(1000 / (n + 1))
   }
   return ratings
 }
-
-// ---------------------------------------------------------------------------
-// Setup: reset mock before each test
-// ---------------------------------------------------------------------------
 
 beforeEach(() => {
   vi.mocked(mockBggFetch).mockReset()
   vi.mocked(mockBggLogin).mockReset()
   vi.mocked(mockBggRateGame).mockReset()
 })
-
-// ---------------------------------------------------------------------------
-// Helper: build a store with pre-seeded state
-// ---------------------------------------------------------------------------
 
 function setupStoreWithGames(
   games: Record<string, Game>,
@@ -92,10 +56,6 @@ function setupStoreWithGames(
   store.setState({ games, ratings: ratings ?? {}, rankingsUsername })
   return store
 }
-
-// ---------------------------------------------------------------------------
-// fetchCollection action (RANK-01, COLL-01, PERSIST-02)
-// ---------------------------------------------------------------------------
 
 describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
   it('calls initializeRankings and seeds integer ratings on first load for this user (RANK-01)', async () => {
@@ -116,7 +76,7 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
     expect(ratingValues.length).toBe(5)
     ratingValues.forEach((v) => {
       expect(Number.isInteger(v)).toBe(true)
-      expect(v).toBeGreaterThanOrEqual(1)
+      expect(v).toBeGreaterThanOrEqual(100)
       expect(v).toBeLessThanOrEqual(1000)
     })
     expect(new Set(ratingValues).size).toBe(5)
@@ -126,7 +86,52 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
     expect(state.currentPair![0]).not.toBe(state.currentPair![1])
   })
 
-  it('always proceeds to fetch even when rankingsUsername matches — PERSIST-02 guard moved to login() (D-07)', async () => {
+  it('does not re-dirty games on load when their computed rating matches lastSyncedRatings', async () => {
+    vi.mocked(mockBggFetch).mockResolvedValueOnce([
+      { id: 'g0', collId: 'c0', name: 'A', yearPublished: 2020, thumbnail: '', userRating: 7 },
+      { id: 'g1', collId: 'c1', name: 'B', yearPublished: 2021, thumbnail: '', userRating: 8 },
+    ])
+
+    const store = createAppStore(createMockStorage())
+
+    // Simulate a previous full sync: compute what the app would assign and store as lastSyncedRatings
+    const tempStore = createAppStore(createMockStorage())
+    vi.mocked(mockBggFetch).mockResolvedValueOnce([
+      { id: 'g0', collId: 'c0', name: 'A', yearPublished: 2020, thumbnail: '', userRating: 7 },
+      { id: 'g1', collId: 'c1', name: 'B', yearPublished: 2021, thumbnail: '', userRating: 8 },
+    ])
+    await tempStore.getState().fetchCollection('alice')
+    const syncedRatings = tempStore.getState().ratings
+
+    store.setState({ lastSyncedRatings: syncedRatings } as Parameters<typeof store.setState>[0])
+    await store.getState().fetchCollection('alice')
+
+    expect(store.getState().dirtyGameIds).toEqual([])
+  })
+
+  it('marks games dirty on load iff their app-computed rating differs from BGG rating', async () => {
+    vi.mocked(mockBggFetch).mockResolvedValueOnce([
+      { id: 'g0', collId: 'c0', name: 'A', yearPublished: 2020, thumbnail: '', userRating: 7 },
+      { id: 'g1', collId: 'c1', name: 'B', yearPublished: 2021, thumbnail: '', userRating: 8 },
+      { id: 'g2', collId: 'c2', name: 'C', yearPublished: 2022, thumbnail: '', userRating: 6 },
+      { id: 'g3', collId: 'c3', name: 'D', yearPublished: 2023, thumbnail: '', userRating: 5 },
+      { id: 'g4', collId: 'c4', name: 'E', yearPublished: 2024, thumbnail: '', userRating: 9 },
+    ])
+    const store = createAppStore(createMockStorage())
+    await store.getState().fetchCollection('alice')
+
+    const state = store.getState()
+    for (const [id, appRating] of Object.entries(state.ratings)) {
+      const bggInt = Math.round((state.games[id].userRating as number) * 100)
+      if (appRating !== bggInt) {
+        expect(state.dirtyGameIds).toContain(id)
+      } else {
+        expect(state.dirtyGameIds).not.toContain(id)
+      }
+    }
+  })
+
+  it('always proceeds to fetch even when rankingsUsername matches — PERSIST-02 guard moved to login()', async () => {
     vi.mocked(mockBggFetch).mockResolvedValueOnce([
       { id: 'g0', name: 'Game 0', yearPublished: 2020, thumbnail: '', userRating: null },
       { id: 'g1', name: 'Game 1', yearPublished: 2021, thumbnail: '', userRating: null },
@@ -141,8 +146,6 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
 
     await store.getState().fetchCollection('alice')
 
-    // fetchCollection no longer has PERSIST-02 guard — it always fetches (Pitfall 3)
-    // The guard now lives exclusively in login() for D-07 auto-resume
     expect(vi.mocked(mockBggFetch)).toHaveBeenCalledWith('alice', undefined)
     expect(store.getState().view).toBe('comparison')
   })
@@ -179,7 +182,7 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
       name: `Game ${i}`,
       yearPublished: 2000,
       thumbnail: '',
-      userRating: 7,  // rated so they count toward capacity limit
+      userRating: 7,
     }))
     vi.mocked(mockBggFetch).mockResolvedValueOnce(manyGames)
 
@@ -224,10 +227,6 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// selectRandomPair (RANK-02)
-// ---------------------------------------------------------------------------
-
 describe('selectRandomPair (RANK-02)', () => {
   it('returns null when fewer than 2 games exist (RANK-02)', () => {
     expect(selectRandomPair({}, [])).toBeNull()
@@ -251,11 +250,28 @@ describe('selectRandomPair (RANK-02)', () => {
     const pair = selectRandomPair(ratings, skipQueue)
     expect(pair).toEqual(['g0', 'g1'])
   })
-})
 
-// ---------------------------------------------------------------------------
-// pick action (RANK-03, RANK-05, PERSIST-01)
-// ---------------------------------------------------------------------------
+  it('only pairs games within ±1 tier when valid partners exist', () => {
+    // g0=tier5(500), g1=tier8(800), g2=tier9(900)
+    // g1 and g2 are adjacent (tiers 8 and 9); g0 has no adjacent partner
+    const ratings = { g0: 500, g1: 800, g2: 900 }
+    for (let i = 0; i < 50; i++) {
+      const pair = selectRandomPair(ratings, [])!
+      const tierA = Math.ceil(ratings[pair[0]] / 100)
+      const tierB = Math.ceil(ratings[pair[1]] / 100)
+      if (pair[0] !== 'g0' && pair[1] !== 'g0') {
+        expect(Math.abs(tierA - tierB)).toBeLessThanOrEqual(1)
+      }
+    }
+  })
+
+  it('falls back to any partner when no adjacent-tier candidate exists', () => {
+    const ratings = { g0: 100, g1: 1000 }
+    const pair = selectRandomPair(ratings, [])
+    expect(pair).not.toBeNull()
+    expect(pair![0]).not.toBe(pair![1])
+  })
+})
 
 describe('pick action (RANK-03, RANK-05, PERSIST-01)', () => {
   it('calls applyUpset and updates ratings when winner was ranked lower (RANK-03)', () => {
@@ -265,8 +281,6 @@ describe('pick action (RANK-03, RANK-05, PERSIST-01)', () => {
     store.getState().pick('g1', 'g0')
 
     const state = store.getState()
-    // g1 was the upset winner (previously 500, g0 was 900)
-    // After upset: g1 takes g0's slot (900), g0 shifts down to g1's old slot (500)
     expect(state.ratings.g1).toBe(900)
     expect(state.ratings.g0).toBe(500)
   })
@@ -288,7 +302,6 @@ describe('pick action (RANK-03, RANK-05, PERSIST-01)', () => {
       store.setState({ currentPair: nextPair })
       store.getState().pick(nextPair[0], nextPair[1])
     } else {
-      // Force a valid pair for the second pick
       store.setState({ currentPair: ['g2', 'g3'] })
       store.getState().pick('g2', 'g3')
     }
@@ -343,11 +356,9 @@ describe('pick action (RANK-03, RANK-05, PERSIST-01)', () => {
     const parsed = JSON.parse(dump[persistKey]) as { state: Record<string, unknown> }
     const persistedState = parsed.state
 
-    // After upset: g1 (winner) takes g0's position (900)
     const persistedRatings = persistedState.ratings as Record<string, number>
     expect(persistedRatings.g1).toBe(900)
 
-    // Partialize exclusions: session-only fields must NOT be in persisted state
     expect('sessionUsername' in persistedState).toBe(false)
     expect('view' in persistedState).toBe(false)
     expect('currentPair' in persistedState).toBe(false)
@@ -355,10 +366,6 @@ describe('pick action (RANK-03, RANK-05, PERSIST-01)', () => {
     expect('sessionComparisons' in persistedState).toBe(false)
   })
 })
-
-// ---------------------------------------------------------------------------
-// skip action (RANK-04)
-// ---------------------------------------------------------------------------
 
 describe('skip action (RANK-04)', () => {
   it('appends current pair to skipQueue (RANK-04)', () => {
@@ -381,9 +388,6 @@ describe('skip action (RANK-04)', () => {
 
     const nextPair = store.getState().currentPair
     expect(nextPair).not.toBeNull()
-    // The skipped pair should not immediately re-present (queue only drains on pick)
-    // Note: with purely random selection there's a small chance it picks the same pair;
-    // that's acceptable — the key invariant is that the pair comes from the random pool.
     expect(nextPair![0]).not.toBe(nextPair![1])
   })
 
@@ -407,10 +411,6 @@ describe('skip action (RANK-04)', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// refresh action (REFRESH-01)
-// ---------------------------------------------------------------------------
-
 describe('refresh action (REFRESH-01)', () => {
   it('calls redistribute and updates ratings (REFRESH-01)', () => {
     const store = setupStoreWithGames(
@@ -422,15 +422,12 @@ describe('refresh action (REFRESH-01)', () => {
     store.getState().refresh()
 
     const afterRatings = store.getState().ratings
-    // Object identity must differ (new object returned)
     expect(afterRatings).not.toBe(beforeRatings)
-    // All values must still be integers in [1, 1000]
     Object.values(afterRatings).forEach((v) => {
       expect(Number.isInteger(v)).toBe(true)
-      expect(v).toBeGreaterThanOrEqual(1)
+      expect(v).toBeGreaterThanOrEqual(100)
       expect(v).toBeLessThanOrEqual(1000)
     })
-    // All values must be unique
     const vals = Object.values(afterRatings)
     expect(new Set(vals).size).toBe(vals.length)
   })
@@ -444,7 +441,6 @@ describe('refresh action (REFRESH-01)', () => {
     store.getState().refresh()
 
     const afterRatings = store.getState().ratings
-    // Sort descending to get order: g2 should be first, then g1, then g0
     const sorted = Object.entries(afterRatings)
       .sort((a, b) => b[1] - a[1])
       .map(([id]) => id)
@@ -473,10 +469,6 @@ describe('refresh action (REFRESH-01)', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// partialize / persist guard (PERSIST-01, AUTH-03)
-// ---------------------------------------------------------------------------
-
 describe('partialize / persist guard (PERSIST-01, AUTH-03)', () => {
   it('persists ratings, games, comparisonsTotal, rankingsUsername, lastFetched, version (PERSIST-01)', () => {
     const storage = createMockStorage()
@@ -488,7 +480,6 @@ describe('partialize / persist guard (PERSIST-01, AUTH-03)', () => {
       rankingsUsername: 'alice',
     })
 
-    // Trigger a state change to force persistence
     store.getState().pick('g0', 'g1')
 
     const dump = storage._dump()
@@ -496,7 +487,6 @@ describe('partialize / persist guard (PERSIST-01, AUTH-03)', () => {
     const parsed = JSON.parse(dump[persistKey]) as { state: Record<string, unknown> }
     const persistedState = parsed.state
 
-    // Exactly these 6 keys must be present
     expect('games' in persistedState).toBe(true)
     expect('lastFetched' in persistedState).toBe(true)
     expect('ratings' in persistedState).toBe(true)
@@ -528,7 +518,6 @@ describe('partialize / persist guard (PERSIST-01, AUTH-03)', () => {
     const parsed = JSON.parse(dump[persistKey]) as { state: Record<string, unknown> }
     const persistedState = parsed.state
 
-    // These 7 ephemeral fields must NOT be in the persisted state (AUTH-03 + CLAUDE.md)
     expect('sessionUsername' in persistedState).toBe(false)
     expect('view' in persistedState).toBe(false)
     expect('currentPair' in persistedState).toBe(false)
@@ -538,15 +527,6 @@ describe('partialize / persist guard (PERSIST-01, AUTH-03)', () => {
     expect('sessionComparisons' in persistedState).toBe(false)
   })
 })
-
-// ===========================================================================
-// Phase 3: Auth & BGG Sync — RED tests
-// All tests below expect failures until 03-02 through 03-04 implement these features.
-// ===========================================================================
-
-// ---------------------------------------------------------------------------
-// login action (AUTH-01)
-// ---------------------------------------------------------------------------
 
 describe('login action (AUTH-01)', () => {
   it('login() sets sessionId in store state (AUTH-01)', async () => {
@@ -594,10 +574,6 @@ describe('login action (AUTH-01)', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// startSync action (SYNC-01, SYNC-02)
-// ---------------------------------------------------------------------------
-
 describe('startSync action (SYNC-01, SYNC-02)', () => {
   it('startSync() calls bggRateGame for each gameId in dirtyGameIds (SYNC-01)', async () => {
     vi.mocked(mockBggRateGame).mockResolvedValue(undefined)
@@ -626,7 +602,7 @@ describe('startSync action (SYNC-01, SYNC-02)', () => {
     store.setState({
       ratings: { g0: 900, g1: 901, g2: 902 },
       sessionId: 'active-session',
-      dirtyGameIds: ['g1', 'g2'], // g0 already clean — not in dirty set
+      dirtyGameIds: ['g1', 'g2'],
       games: {
         g0: { id: 'g0', collId: 'coll-g0', name: 'G0', yearPublished: 2020, thumbnail: '' },
         g1: { id: 'g1', collId: 'coll-g1', name: 'G1', yearPublished: 2020, thumbnail: '' },
@@ -681,10 +657,6 @@ describe('startSync action (SYNC-01, SYNC-02)', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// markGameSynced action (SYNC-03)
-// ---------------------------------------------------------------------------
-
 describe('markGameSynced action (SYNC-03)', () => {
   it('markGameSynced("g123") removes "g123" from dirtyGameIds (SYNC-03)', () => {
     const store = createAppStore(createMockStorage())
@@ -706,14 +678,9 @@ describe('markGameSynced action (SYNC-03)', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// completeSyncAll action (SYNC-03)
-// ---------------------------------------------------------------------------
-
 describe('completeSyncAll action (SYNC-03)', () => {
-  it('completeSyncAll() leaves dirtyGameIds empty (all removed by markGameSynced during sync) (SYNC-03)', () => {
+  it('completeSyncAll() leaves dirtyGameIds empty (SYNC-03)', () => {
     const store = createAppStore(createMockStorage())
-    // Simulate post-sync state: markGameSynced() already removed each ID
     store.setState({ dirtyGameIds: [] } as Parameters<typeof store.setState>[0])
 
     store.getState().completeSyncAll()
@@ -721,7 +688,7 @@ describe('completeSyncAll action (SYNC-03)', () => {
     expect(store.getState().dirtyGameIds).toEqual([])
   })
 
-  it('completeSyncAll() sets comparisonsAtLastSync = comparisonsTotal (SYNC-03, D-12)', () => {
+  it('completeSyncAll() sets comparisonsAtLastSync = comparisonsTotal (SYNC-03)', () => {
     const store = createAppStore(createMockStorage())
     store.setState({
       comparisonsTotal: 42,
@@ -732,11 +699,25 @@ describe('completeSyncAll action (SYNC-03)', () => {
 
     expect(store.getState().comparisonsAtLastSync).toBe(42)
   })
-})
 
-// ---------------------------------------------------------------------------
-// reAuthAndResume action (AUTH-03)
-// ---------------------------------------------------------------------------
+  it('completeSyncAll() resets sessionComparisons to 0', () => {
+    const store = createAppStore(createMockStorage())
+    store.setState({ sessionComparisons: 7, dirtyGameIds: [] } as Parameters<typeof store.setState>[0])
+
+    store.getState().completeSyncAll()
+
+    expect(store.getState().sessionComparisons).toBe(0)
+  })
+
+  it('completeSyncAll() saves current ratings as lastSyncedRatings', () => {
+    const store = createAppStore(createMockStorage())
+    store.setState({ ratings: { g0: 900, g1: 800 }, dirtyGameIds: [] } as Parameters<typeof store.setState>[0])
+
+    store.getState().completeSyncAll()
+
+    expect(store.getState().lastSyncedRatings).toEqual({ g0: 900, g1: 800 })
+  })
+})
 
 describe('reAuthAndResume action (AUTH-03)', () => {
   it('reAuthAndResume() calls bggLogin and updates sessionId (AUTH-03)', async () => {
@@ -760,7 +741,7 @@ describe('reAuthAndResume action (AUTH-03)', () => {
     expect(store.getState().sessionId).toBe('new-session-456')
   })
 
-  it('reAuthAndResume() resumes sync — only dirty games are written (g0 already clean) (SYNC-03, D-10)', async () => {
+  it('reAuthAndResume() resumes sync — only dirty games are written (SYNC-03)', async () => {
     vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'new-session-456' })
     vi.mocked(mockBggRateGame).mockResolvedValue(undefined)
 
@@ -769,7 +750,7 @@ describe('reAuthAndResume action (AUTH-03)', () => {
       sessionUsername: 'alice',
       sessionId: 'old-session',
       ratings: { g0: 700, g1: 900 },
-      dirtyGameIds: ['g1'], // g0 already clean; only g1 should be called
+      dirtyGameIds: ['g1'],
       games: {
         g0: { id: 'g0', collId: 'coll-g0', name: 'G0', yearPublished: 2020, thumbnail: '' },
         g1: { id: 'g1', collId: 'coll-g1', name: 'G1', yearPublished: 2020, thumbnail: '' },
@@ -783,10 +764,6 @@ describe('reAuthAndResume action (AUTH-03)', () => {
     expect(calledCollIds).toContain('coll-g1')
   })
 })
-
-// ---------------------------------------------------------------------------
-// cancelSync action
-// ---------------------------------------------------------------------------
 
 describe('cancelSync action', () => {
   it('cancelSync() sets sessionId to null (loop check aborts)', () => {
@@ -808,10 +785,6 @@ describe('cancelSync action', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// beforeunload predicate (AUTH-02)
-// ---------------------------------------------------------------------------
-
 describe('beforeunload predicate (AUTH-02)', () => {
   it('dirtyGameIds.length > 0 after a pick that changes ratings (AUTH-02)', () => {
     const store = setupStoreWithGames(makeGames(2), { g0: 900, g1: 500 })
@@ -821,7 +794,7 @@ describe('beforeunload predicate (AUTH-02)', () => {
       currentPair: ['g0', 'g1'],
     } as Parameters<typeof store.setState>[0])
 
-    store.getState().pick('g1', 'g0')  // upset: g1 (500) beats g0 (900) → ratings change
+    store.getState().pick('g1', 'g0')
 
     expect(store.getState().dirtyGameIds.length).toBeGreaterThan(0)
   })
@@ -838,10 +811,6 @@ describe('beforeunload predicate (AUTH-02)', () => {
     expect(store.getState().dirtyGameIds).toEqual([])
   })
 })
-
-// ---------------------------------------------------------------------------
-// RankingsStateSlice persistence (SYNC-03)
-// ---------------------------------------------------------------------------
 
 describe('RankingsStateSlice persistence (SYNC-03)', () => {
   it('dirtyGameIds and comparisonsAtLastSync are present in partialize output (SYNC-03)', () => {
@@ -864,7 +833,7 @@ describe('RankingsStateSlice persistence (SYNC-03)', () => {
     expect('comparisonsAtLastSync' in parsed.state).toBe(true)
   })
 
-  it('sessionId is absent from partialize output (belt-and-suspenders, AUTH-03)', () => {
+  it('sessionId is absent from partialize output (AUTH-03)', () => {
     const storage = createMockStorage()
     const store = createAppStore(storage)
     store.setState({
@@ -883,26 +852,15 @@ describe('RankingsStateSlice persistence (SYNC-03)', () => {
   })
 })
 
-// ===========================================================================
-// Phase 4: Display Polish — RED tests
-// All tests below expect failures until 04-02 through 04-04 implement these features.
-// ===========================================================================
-
-// ---------------------------------------------------------------------------
-// pick() upset detection (D-01, D-02, D-03)
-// ---------------------------------------------------------------------------
-
 describe('pick() upset detection (D-01, D-02, D-03)', () => {
   afterEach(() => {
     vi.useRealTimers()
   })
 
   it('sets lastUpset when winner was ranked lower than loser (upset) (D-01)', () => {
-    // g3=900 (rank1/pos0), g2=700 (rank2/pos1), g1=500 (rank3/pos2), g0=300 (rank4/pos3)
     const store = setupStoreWithGames(makeGames(4), { g3: 900, g2: 700, g1: 500, g0: 300 })
     store.setState({ currentPair: ['g0', 'g3'] } as Parameters<typeof store.setState>[0])
 
-    // g0 (pos3) beats g3 (pos0) — upset: winner was ranked lower
     store.getState().pick('g0', 'g3')
 
     const state = store.getState() as Record<string, unknown>
@@ -913,11 +871,9 @@ describe('pick() upset detection (D-01, D-02, D-03)', () => {
   })
 
   it('does NOT set lastUpset when winner was ranked higher than loser (normal result) (D-01)', () => {
-    // g3=900 (rank1/pos0), g2=700, g1=500, g0=300 (rank4/pos3)
     const store = setupStoreWithGames(makeGames(4), { g3: 900, g2: 700, g1: 500, g0: 300 })
     store.setState({ currentPair: ['g3', 'g0'] } as Parameters<typeof store.setState>[0])
 
-    // g3 (pos0) beats g0 (pos3) — normal: winner was already ranked higher
     store.getState().pick('g3', 'g0')
 
     const state = store.getState() as Record<string, unknown>
@@ -932,22 +888,15 @@ describe('pick() upset detection (D-01, D-02, D-03)', () => {
 
     store.getState().pick('g0', 'g3')
 
-    // Immediately after pick: lastUpset should be non-null
     const stateBefore = store.getState() as Record<string, unknown>
     expect(stateBefore.lastUpset).not.toBeNull()
 
-    // Advance timers by 5000ms
     vi.advanceTimersByTime(5000)
 
-    // After 5 seconds: lastUpset should be cleared
     const stateAfter = store.getState() as Record<string, unknown>
     expect(stateAfter.lastUpset).toBeNull()
   })
 })
-
-// ---------------------------------------------------------------------------
-// login() auto-resume (D-07)
-// ---------------------------------------------------------------------------
 
 describe('login() always fetches from BGG', () => {
   it('always calls fetchCollection regardless of stored rankings — BGG is authoritative', async () => {
@@ -981,7 +930,6 @@ describe('login() always fetches from BGG', () => {
 
     await store.getState().login('alice', 'pw')
 
-    // Old stale game is gone; new collection from BGG is in place
     expect('old' in store.getState().ratings).toBe(false)
     expect(Object.keys(store.getState().ratings).length).toBe(2)
   })

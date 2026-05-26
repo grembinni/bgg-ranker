@@ -1,18 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../store/store'
 
-/**
- * SyncingView — Dedicated sync progress view (D-06).
- *
- * Renders based on syncStatus from the store:
- *   'syncing'         — live progress counter + Cancel button (SYNC-02)
- *   'session-expired' — paused progress + inline re-auth form (D-09, T-03-09)
- *   'error'           — error message + Cancel/Return button
- *   'complete'        — success message (D-07; store auto-returns after 2000ms)
- *
- * T-03-09: reAuthPassword is local React state — never written to Zustand or localStorage.
- * Component never calls bggClient directly (CLAUDE.md).
- */
 export default function SyncingView() {
   const syncStatus = useStore((s) => s.syncStatus)
   const syncProgress = useStore((s) => s.syncProgress)
@@ -22,9 +10,8 @@ export default function SyncingView() {
   const reAuthAndResume = useStore((s) => s.reAuthAndResume)
   const syncErrorDetail = useStore((s) => s.syncErrorDetail)
 
-  // T-03-09: password kept in local state only — cleared on unmount; never persisted
+  // password kept in local state only — never written to Zustand or localStorage
   const [reAuthPassword, setReAuthPassword] = useState<string>('')
-  // WR-04: prevent double-submission while re-auth is in flight
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleResume = async () => {
@@ -37,7 +24,6 @@ export default function SyncingView() {
     }
   }
 
-  // Shared layout: centered, max-w-sm, matching UsernameEntry proportions
   const container = 'max-w-sm mx-auto px-4 py-12'
 
   if (syncStatus === 'complete') {
@@ -124,7 +110,6 @@ export default function SyncingView() {
     )
   }
 
-  // Default: syncStatus === 'syncing'
   return (
     <div className={container}>
       <p className="text-xl font-semibold text-gray-900 text-center mb-6">

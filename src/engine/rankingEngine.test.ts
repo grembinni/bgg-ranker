@@ -1,9 +1,3 @@
-/**
- * rankingEngine.test.ts — Full unit test suite for the bell-curve ranking engine
- *
- * Covers requirements: RANK-06, RANK-07, RANK-08, RANK-09, RANK-10
- * Each test name includes the relevant requirement ID for grep traceability.
- */
 import { describe, it, expect } from 'vitest'
 import {
   computeTierAllocations,
@@ -17,16 +11,16 @@ import {
   MAX_GAMES,
 } from './rankingEngine'
 
-// ---------------------------------------------------------------------------
-// Helper: create an array of n game IDs like ["g0", "g1", ...]
-// ---------------------------------------------------------------------------
 function makeIds(n: number): string[] {
   return Array.from({ length: n }, (_, i) => `g${i}`)
 }
 
-// ---------------------------------------------------------------------------
-// RANK-10: Capacity validation
-// ---------------------------------------------------------------------------
+function splitTier1(values: number[]) {
+  return {
+    tier1: values.filter(v => v === 100),
+    upper: values.filter(v => v > 100),
+  }
+}
 
 describe('validateTierCapacity (RANK-10)', () => {
   it('does not throw for 0 games (RANK-10)', () => {
@@ -61,14 +55,10 @@ describe('validateTierCapacity (RANK-10)', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// RANK-06: Bell-curve tier distribution (weights)
-// ---------------------------------------------------------------------------
-
 describe('computeTierAllocations — RANK-06 bell-curve distribution', () => {
-  it('TIER_WEIGHTS sums to 113 and has 10 elements (RANK-06)', () => {
+  it('TIER_WEIGHTS sums to 100 and has 10 elements (RANK-06)', () => {
     expect(TIER_WEIGHTS.length).toBe(10)
-    expect(TIER_WEIGHTS.reduce((a, b) => a + b, 0)).toBe(113)
+    expect(TIER_WEIGHTS.reduce((a, b) => a + b, 0)).toBe(100)
   })
 
   it('sum of allocations equals gameCount for various sizes (RANK-06)', () => {
@@ -87,32 +77,28 @@ describe('computeTierAllocations — RANK-06 bell-curve distribution', () => {
     }
   })
 
-  it('index-5 tier (tier 5, weight 30) gets the most games for n=113 (RANK-06)', () => {
-    // With n=113 and weights summing to 113, each weight equals its exact allocation
-    const allocs = computeTierAllocations(113)
-    // Index 5 = tier 5 = weight 30 (highest weight)
+  it('indices 4 and 5 (tiers 6 and 5, weight 21 each) are tied for most games at n=100 (RANK-06)', () => {
+    const allocs = computeTierAllocations(100)
     const max = Math.max(...allocs)
+    expect(allocs[4]).toBe(max)
     expect(allocs[5]).toBe(max)
-    expect(allocs[5]).toBe(30)
+    expect(allocs[4]).toBe(21)
+    expect(allocs[5]).toBe(21)
   })
 
   it('higher-weight tiers get more games than lower-weight tiers for small n (RANK-06)', () => {
-    // For collections within the per-tier cap (≤373 games), bell curve shape is preserved.
     const allocs = computeTierAllocations(200)
-    // Index 5 (weight 30) > index 0 (weight 2) — bell curve shape confirmed
     expect(allocs[5]).toBeGreaterThan(allocs[0])
     expect(allocs[5]).toBeGreaterThan(allocs[9])
   })
 
-  it('single game goes to index 5 (highest weight tier) (RANK-06)', () => {
+  it('single game goes to index 4 or 5 (tiers 6/5 tied at weight 21) (RANK-06)', () => {
     const allocs = computeTierAllocations(1, TIER_WEIGHTS)
     const total = allocs.reduce((a, b) => a + b, 0)
     expect(total).toBe(1)
-    // Exactly one tier gets the game
     const nonZero = allocs.filter((a) => a > 0)
     expect(nonZero.length).toBe(1)
-    // The single game goes to index 5 (tier 5, highest weight 30)
-    expect(allocs[5]).toBe(1)
+    expect(allocs[4] + allocs[5]).toBe(1)
   })
 
   it('returns 10-element array (RANK-06)', () => {
@@ -120,46 +106,45 @@ describe('computeTierAllocations — RANK-06 bell-curve distribution', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// RANK-07: Unique ratings
-// ---------------------------------------------------------------------------
-
 describe('assignRatings — RANK-07 unique ratings', () => {
-  it('all ratings unique for 100 games (RANK-07)', () => {
+  it('tier 1 games all get rating 100 (BGG minimum 1.00) (RANK-07)', () => {
+    const customWeights = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1] as const
+    const ids = makeIds(5)
+    const allocs = computeTierAllocations(5, customWeights)
+    const ratings = assignRatings(ids, allocs)
+    const values = Object.values(ratings)
+    expect(values.every(v => v === 100)).toBe(true)
+  })
+
+  it('tiers 2-10 ratings are unique for 100 games; tier 1 games share 1.00 (RANK-07)', () => {
     const ids = makeIds(100)
     const allocs = computeTierAllocations(100)
     const ratings = assignRatings(ids, allocs)
-    const values = Object.values(ratings)
-    expect(new Set(values).size).toBe(values.length)
-    expect(values.length).toBe(100)
+    const { tier1, upper } = splitTier1(Object.values(ratings))
+    expect(upper.length + tier1.length).toBe(100)
+    expect(new Set(upper).size).toBe(upper.length)
+    expect(tier1.every(v => v === 100)).toBe(true)
   })
 
-  it('all ratings unique for 200 games (RANK-07)', () => {
-    // 200 games is well within the unique-rating capacity of the bell-curve distribution.
-    // (Uniqueness is guaranteed up to ~373 games with TIER_WEIGHTS.)
+  it('tiers 2-10 ratings are unique for 200 games (RANK-07)', () => {
     const ids = makeIds(200)
     const allocs = computeTierAllocations(200)
-    const ratings = assignRatings(ids, allocs)
-    const values = Object.values(ratings)
-    expect(new Set(values).size).toBe(values.length)
+    const { upper } = splitTier1(Object.values(assignRatings(ids, allocs)))
+    expect(new Set(upper).size).toBe(upper.length)
   })
 
-  it('all ratings unique for 373 games (RANK-07)', () => {
+  it('tiers 2-10 ratings are unique for 373 games (RANK-07)', () => {
     const ids = makeIds(373)
     const allocs = computeTierAllocations(373)
-    const ratings = assignRatings(ids, allocs)
-    const values = Object.values(ratings)
-    expect(new Set(values).size).toBe(373)
+    const { upper } = splitTier1(Object.values(assignRatings(ids, allocs)))
+    expect(new Set(upper).size).toBe(upper.length)
   })
 
-  it('all ratings unique for 400 games — overflow tier is capped and redistributed (RANK-07)', () => {
-    // 400 games previously caused tier 5 to exceed 99 slots (step=0 → all games rated 5.00).
-    // computeTierAllocations now caps each tier at 99 and redistributes overflow.
+  it('tiers 2-10 ratings unique for 400 games — overflow redistributed (RANK-07)', () => {
     const ids = makeIds(400)
     const allocs = computeTierAllocations(400)
-    const ratings = assignRatings(ids, allocs)
-    const values = Object.values(ratings)
-    expect(new Set(values).size).toBe(400)
+    const { upper } = splitTier1(Object.values(assignRatings(ids, allocs)))
+    expect(new Set(upper).size).toBe(upper.length)
   })
 
   it('no tier allocation exceeds 99 for any collection size up to 990 (RANK-07)', () => {
@@ -171,45 +156,34 @@ describe('assignRatings — RANK-07 unique ratings', () => {
     }
   })
 
-  it('all ratings unique for 990 games (RANK-07)', () => {
+  it('tiers 2-10 ratings unique for 990 games (RANK-07)', () => {
     const ids = makeIds(990)
     const allocs = computeTierAllocations(990)
-    const ratings = assignRatings(ids, allocs)
-    const values = Object.values(ratings)
-    expect(new Set(values).size).toBe(990)
+    const { upper } = splitTier1(Object.values(assignRatings(ids, allocs)))
+    expect(new Set(upper).size).toBe(upper.length)
   })
 })
 
-// ---------------------------------------------------------------------------
-// RANK-08: Tier range bounds [N.00, (N-1).01] = integers [N*100, (N-1)*100+1]
-// ---------------------------------------------------------------------------
-
 describe('assignRatings — RANK-08 tier range bounds', () => {
-  it('all ratings in [1, 1000] for 200 games (RANK-08)', () => {
-    // Internal storage range: [1, 1000]. Tier 1 uses integers 1..100 internally.
-    // D-11: ratings < 100 are clamped to 100 at display/BGG-sync time (not here).
-    // The stored integer range is [1, 1000] with tier N in [(N-1)*100+1, N*100].
+  it('all ratings in [100, 1000] for 200 games (RANK-08)', () => {
     const ids = makeIds(200)
     const allocs = computeTierAllocations(200)
     const ratings = assignRatings(ids, allocs)
     for (const r of Object.values(ratings)) {
-      expect(r).toBeGreaterThanOrEqual(1)    // tier 1 internal minimum (0.01 in decimal)
-      expect(r).toBeLessThanOrEqual(1000)    // tier 10 maximum (10.00 in decimal)
+      expect(r).toBeGreaterThanOrEqual(100)
+      expect(r).toBeLessThanOrEqual(1000)
     }
   })
 
   it('tier 9 games have ratings in [801, 900] (RANK-08)', () => {
-    // Use 200 games to guarantee tier 9 is populated
     const ids = makeIds(200)
     const allocs = computeTierAllocations(200)
     const ratings = assignRatings(ids, allocs)
 
-    // Tier 9 is tierIdx=1, so positions start after allocs[0] (tier 10 games)
     const tier10Count = allocs[0]
     const tier9Count = allocs[1]
-    expect(tier9Count).toBeGreaterThan(0) // ensure tier 9 has games
+    expect(tier9Count).toBeGreaterThan(0)
 
-    // Games at positions [tier10Count, tier10Count + tier9Count) are in tier 9
     const tier9Ratings = ids
       .slice(tier10Count, tier10Count + tier9Count)
       .map((id) => ratings[id])
@@ -221,10 +195,6 @@ describe('assignRatings — RANK-08 tier range bounds', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// RANK-09: Equal spacing + integer storage
-// ---------------------------------------------------------------------------
-
 describe('assignRatings — RANK-09 integer storage and equal spacing', () => {
   it('all returned values are integers (RANK-09)', () => {
     const ids = makeIds(50)
@@ -235,58 +205,45 @@ describe('assignRatings — RANK-09 integer storage and equal spacing', () => {
     }
   })
 
-  it('equal spacing within a tier for 100 games (RANK-09)', () => {
-    // With 100 games, pick tier 5 (index 5, weight 30): gets 26 games, step=3
-    // Tier 5: tierNum=5, tierMaxInt=500, tierMinInt=401, range [401..500]
+  it('consistent spacing within a tier for 100 games (RANK-09)', () => {
+    // With 100 games, tier 5 (index 5, weight 21) gets 21 games → ≤40 band → endings {0,3,5,7}
     const ids = makeIds(100)
     const allocs = computeTierAllocations(100)
     const ratings = assignRatings(ids, allocs)
 
-    // Collect all ratings in tier 5's range [401, 500]
     const tier5Ratings = Object.values(ratings)
       .filter((r) => r >= 401 && r <= 500)
-      .sort((a, b) => b - a) // descending
+      .sort((a, b) => b - a)
 
     expect(tier5Ratings.length).toBeGreaterThanOrEqual(2)
 
-    // Verify equal spacing: all consecutive differences should be the same (or at most 2 distinct)
     const diffs = new Set<number>()
     for (let i = 1; i < tier5Ratings.length; i++) {
       diffs.add(tier5Ratings[i - 1] - tier5Ratings[i])
     }
-    // Should have at most 2 distinct differences (clamping at tierMinInt may add one variant)
     expect(diffs.size).toBeLessThanOrEqual(2)
-    // The step must be at least 1 (ensures all values in this tier are distinct)
     for (const d of diffs) {
       expect(d).toBeGreaterThanOrEqual(1)
     }
   })
 
-  it('within-tier step is consistent for a small controlled case (RANK-09)', () => {
-    // 3 games in a single tier to test exact spacing
-    // Use custom weights that put all games in tier 5
+  it('within-tier slot selection for a small controlled case (RANK-09)', () => {
+    // 3 games in tier 5 → ≤10 band → last digit 0 slots from top: 500, 490, 480
     const customWeights = [0, 0, 0, 0, 0, 1, 0, 0, 0, 0] as const
     const ids = makeIds(3)
     const allocs = computeTierAllocations(3, customWeights)
-    expect(allocs[5]).toBe(3) // all 3 go to tier 5
+    expect(allocs[5]).toBe(3)
     const ratings = assignRatings(ids, allocs)
     const values = Object.values(ratings).sort((a, b) => b - a)
 
-    // Tier 5: max=500, min=401, availableSlots=99, step=floor(99/2)=49
-    // So positions: 500, 500-49=451, 451-49=402 → [500, 451, 402]
     expect(values[0]).toBe(500)
-    expect(values[1]).toBe(451)
-    expect(values[2]).toBe(402)
+    expect(values[1]).toBe(490)
+    expect(values[2]).toBe(480)
   })
 })
 
-// ---------------------------------------------------------------------------
-// applyUpset
-// ---------------------------------------------------------------------------
-
 describe('applyUpset', () => {
   it('winner takes loser position; games between shift down', () => {
-    // A(900) > B(850) > C(800); C upsets A
     const ratings = { A: 900, B: 850, C: 800 }
     const result = applyUpset('C', 'A', ratings)
     expect(result['C']).toBe(900)
@@ -301,7 +258,6 @@ describe('applyUpset', () => {
   })
 
   it('4-game case: D upsets A, B and C shift down', () => {
-    // A(900) > B(850) > C(800) > D(750); D upsets A
     const ratings = { A: 900, B: 850, C: 800, D: 750 }
     const result = applyUpset('D', 'A', ratings)
     expect(result['D']).toBe(900)
@@ -312,7 +268,7 @@ describe('applyUpset', () => {
 
   it('returns shallow copy unchanged when winner equals loser position', () => {
     const ratings = { A: 900, B: 800 }
-    const result = applyUpset('A', 'A', ratings) // same id
+    const result = applyUpset('A', 'A', ratings)
     expect(result).toEqual(ratings)
   })
 
@@ -336,10 +292,6 @@ describe('applyUpset', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// redistribute
-// ---------------------------------------------------------------------------
-
 describe('redistribute', () => {
   it('relative order is preserved after redistribution', () => {
     const ratings = { A: 900, B: 800, C: 700 }
@@ -353,8 +305,8 @@ describe('redistribute', () => {
     const allocs = computeTierAllocations(100)
     const initial = assignRatings(ids, allocs)
     const result = redistribute(initial)
-    const values = Object.values(result)
-    expect(new Set(values).size).toBe(values.length)
+    const { upper } = splitTier1(Object.values(result))
+    expect(new Set(upper).size).toBe(upper.length)
   })
 
   it('game count unchanged after redistribution', () => {
@@ -363,28 +315,24 @@ describe('redistribute', () => {
     expect(Object.keys(result).length).toBe(5)
   })
 
-  it('all redistributed ratings remain in [1, 1000]', () => {
+  it('all redistributed ratings remain in [100, 1000]', () => {
     const ids = makeIds(50)
     const allocs = computeTierAllocations(50)
     const initial = assignRatings(ids, allocs)
     const result = redistribute(initial)
     for (const r of Object.values(result)) {
-      expect(r).toBeGreaterThanOrEqual(1)    // tier 1 internal minimum
-      expect(r).toBeLessThanOrEqual(1000)    // tier 10 maximum
+      expect(r).toBeGreaterThanOrEqual(100)
+      expect(r).toBeLessThanOrEqual(1000)
     }
   })
 })
 
-// ---------------------------------------------------------------------------
-// Small collection edge cases (m2 pitfall — single game, crossing tier boundary)
-// ---------------------------------------------------------------------------
-
-describe('small collection edge cases (m2 pitfall)', () => {
-  it('1 game: produces exactly 1 rating in [1, 1000]', () => {
+describe('small collection edge cases', () => {
+  it('1 game: produces exactly 1 rating in [100, 1000]', () => {
     const ratings = assignRatings(['solo'], computeTierAllocations(1))
     const values = Object.values(ratings)
     expect(values.length).toBe(1)
-    expect(values[0]).toBeGreaterThanOrEqual(1)
+    expect(values[0]).toBeGreaterThanOrEqual(100)
     expect(values[0]).toBeLessThanOrEqual(1000)
   })
 
@@ -410,10 +358,6 @@ describe('small collection edge cases (m2 pitfall)', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// initializeRankings integration
-// ---------------------------------------------------------------------------
-
 describe('initializeRankings', () => {
   it('throws TierCapacityError for 991 games (RANK-10)', () => {
     expect(() => initializeRankings(makeIds(991))).toThrow(TierCapacityError)
@@ -424,18 +368,17 @@ describe('initializeRankings', () => {
     expect(Object.keys(ratings).length).toBe(50)
   })
 
-  it('all ratings are unique after initialization (RANK-07)', () => {
+  it('tiers 2-10 ratings are unique after initialization (RANK-07)', () => {
     const ratings = initializeRankings(makeIds(100))
-    const values = Object.values(ratings)
-    expect(new Set(values).size).toBe(100)
+    const { upper } = splitTier1(Object.values(ratings))
+    expect(new Set(upper).size).toBe(upper.length)
   })
 
-  it('all ratings are integers in [1, 1000] (RANK-08, RANK-09)', () => {
-    // Tier 1 games store integers 1..100 internally (D-11: clamped at display/sync time).
+  it('all ratings are integers in [100, 1000] (RANK-08, RANK-09)', () => {
     const ratings = initializeRankings(makeIds(100))
     for (const r of Object.values(ratings)) {
       expect(Number.isInteger(r)).toBe(true)
-      expect(r).toBeGreaterThanOrEqual(1)
+      expect(r).toBeGreaterThanOrEqual(100)
       expect(r).toBeLessThanOrEqual(1000)
     }
   })

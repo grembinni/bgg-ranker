@@ -1,26 +1,8 @@
 // @vitest-environment jsdom
 
-/**
- * SyncingView.test.tsx — Unit tests for the SyncingView component
- *
- * Tests the rendered output for each syncStatus value:
- *   'syncing'         — shows progress counter and Cancel button
- *   'session-expired' — shows inline re-auth form with Resume Sync + Cancel
- *   'error'           — shows error message and Cancel/Return button
- *   'complete'        — shows success message
- *
- * Store is mocked via vi.mock so these tests run in the Vitest node environment
- * without requiring a real Zustand store or DOM.
- *
- * Covers requirements: SYNC-01, SYNC-02, SYNC-03, AUTH-03 (T-03-09)
- */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
-
-// ---------------------------------------------------------------------------
-// Mock the Zustand store — inject controlled state per test
-// ---------------------------------------------------------------------------
 
 const mockCancelSync = vi.fn()
 const mockReAuthAndResume = vi.fn()
@@ -46,10 +28,6 @@ vi.mock('../store/store', () => ({
 
 import SyncingView from './SyncingView'
 
-// ---------------------------------------------------------------------------
-// Reset mocks before each test
-// ---------------------------------------------------------------------------
-
 beforeEach(() => {
   vi.clearAllMocks()
   mockSyncStatus = 'syncing'
@@ -57,10 +35,6 @@ beforeEach(() => {
   mockSyncTotal = 0
   mockSyncErrorDetail = null
 })
-
-// ---------------------------------------------------------------------------
-// syncStatus === 'syncing'
-// ---------------------------------------------------------------------------
 
 describe('SyncingView — syncStatus syncing (SYNC-01, SYNC-02)', () => {
   it('renders "Syncing N / total…" with current progress and total (SYNC-02)', () => {
@@ -87,10 +61,6 @@ describe('SyncingView — syncStatus syncing (SYNC-01, SYNC-02)', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// syncStatus === 'session-expired'
-// ---------------------------------------------------------------------------
-
 describe('SyncingView — syncStatus session-expired (AUTH-03, D-09)', () => {
   beforeEach(() => {
     mockSyncStatus = 'session-expired'
@@ -108,14 +78,14 @@ describe('SyncingView — syncStatus session-expired (AUTH-03, D-09)', () => {
     expect(screen.getByText(/session expired/i)).toBeInTheDocument()
   })
 
-  it('renders a password input (T-03-09 — local state, not Zustand)', () => {
+  it('renders a password input (local state only — never persisted)', () => {
     render(<SyncingView />)
     const input = screen.getByLabelText(/password/i) as HTMLInputElement
     expect(input).toBeInTheDocument()
     expect(input.type).toBe('password')
   })
 
-  it('renders "Resume Sync" button (D-10)', () => {
+  it('renders "Resume Sync" button', () => {
     render(<SyncingView />)
     expect(screen.getByRole('button', { name: /resume sync/i })).toBeInTheDocument()
   })
@@ -134,10 +104,6 @@ describe('SyncingView — syncStatus session-expired (AUTH-03, D-09)', () => {
     expect(mockCancelSync).toHaveBeenCalledTimes(1)
   })
 })
-
-// ---------------------------------------------------------------------------
-// syncStatus === 'error'
-// ---------------------------------------------------------------------------
 
 describe('SyncingView — syncStatus error', () => {
   beforeEach(() => {
@@ -173,10 +139,6 @@ describe('SyncingView — syncStatus error', () => {
     expect(screen.queryByText(/HTTP/)).not.toBeInTheDocument()
   })
 })
-
-// ---------------------------------------------------------------------------
-// syncStatus === 'complete'
-// ---------------------------------------------------------------------------
 
 describe('SyncingView — syncStatus complete (D-07, SYNC-01)', () => {
   it('shows "Sync complete — N games updated" in green text', () => {

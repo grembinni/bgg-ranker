@@ -16,16 +16,33 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { useStore } from '../store/store'
 
+// Static array ensures all Tailwind classes appear as literal strings for CSS inclusion.
+// Index 0 unused; tiers 1–10 map green→blue→purple→pink→red (reversed: 10=green, 1=red).
+const TIER_BORDER = [
+  '',
+  'border-l-red-500',
+  'border-l-rose-500',
+  'border-l-pink-500',
+  'border-l-fuchsia-500',
+  'border-l-purple-500',
+  'border-l-violet-500',
+  'border-l-indigo-500',
+  'border-l-blue-500',
+  'border-l-teal-500',
+  'border-l-emerald-500',
+]
+
 interface RowProps {
   id: string
   rank: number
   name: string
   year: number | undefined
   rating: string
+  tier: number
   onMarkUnplayed: (id: string) => void
 }
 
-function SortableRow({ id, rank, name, year, rating, onMarkUnplayed }: RowProps) {
+function SortableRow({ id, rank, name, year, rating, tier, onMarkUnplayed }: RowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
 
   const style = {
@@ -38,7 +55,7 @@ function SortableRow({ id, rank, name, year, rating, onMarkUnplayed }: RowProps)
     <li
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 py-3 bg-white"
+      className={`flex items-center gap-3 py-3 bg-white border-l-4 pl-2 ${TIER_BORDER[tier] ?? 'border-gray-200'}`}
     >
       <span
         {...attributes}
@@ -116,6 +133,7 @@ export default function RankedListView() {
             {orderedIds.map((id, idx) => {
               const game = games[id]
               const ratingInt = ratings[id] ?? 0
+              const tier = Math.min(10, Math.max(1, Math.ceil(ratingInt / 100)))
               return (
                 <SortableRow
                   key={id}
@@ -124,6 +142,7 @@ export default function RankedListView() {
                   name={game?.name ?? id}
                   year={game?.yearPublished}
                   rating={(ratingInt / 100).toFixed(2)}
+                  tier={tier}
                   onMarkUnplayed={handleMarkUnplayed}
                 />
               )

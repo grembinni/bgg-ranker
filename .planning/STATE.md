@@ -5,13 +5,13 @@
 See: .planning/PROJECT.md (updated 2026-05-26 after v1.0 milestone close)
 
 **Core value:** The user can always tell which of any two games they actually prefer, and the ranking list accurately reflects that — not BGG's community scores, not gut-feel star ratings.
-**Current focus:** Planning v1.1 — Firebase Production Deploy (Phase 5)
+**Current focus:** Planning v1.1 — Phase 4.1 List View Cleanup (inserted before Phase 5)
 
 ## Current Position
 
-Phase: v1.0 COMPLETE — planning next milestone (v1.1)
-Status: All v1.0 phases done and archived; Phase 5 is the only remaining work
-Last activity: 2026-05-26 — v1.0 milestone closed (Phase 4 verified, PERSIST-02 + Firebase routing fixed)
+Phase: 4.1 (List View Cleanup) — Not started
+Status: Phase inserted; ready for /gsd:discuss-phase 4.1
+Last activity: 2026-05-26 — Phase 4.1 inserted (list view cleanup: grid view, hamburger, dirty-flag validation)
 
 Progress: [██████████] Phase 1 | [██████████] Phase 2 | [██████████] Phase 3 | [██████████] Phase 3.1 | [██████████] Phase 4 | [          ] Phase 5
 
@@ -36,9 +36,13 @@ Most recent decisions:
 - Phase 4: Firebase Function routing — req.path replaces req.query['path']
 - v1.0 close: Phase 5 deferred to v1.1 (app feature-complete; production hosting separate)
 
+### Roadmap Evolution
+
+- Phase 4.1 (INSERTED after Phase 4, 2026-05-26): List View Cleanup — hamburger on ranked list, 10×10 thumbnail grid view with drag-and-drop, 50-game pagination, session image cache, dirty-flag validation for unplayed→ranked moves.
+
 ### Pending Todos
 
-None — v1.0 is clean. Ready for v1.1 planning.
+None.
 
 ### Blockers/Concerns
 
@@ -62,4 +66,4 @@ None — v1.0 is clean. Ready for v1.1 planning.
 
 Last session: 2026-05-26
 Stopped at: v1.0 milestone archive complete — ready to start v1.1
-Resume with: `/gsd:new-milestone` or `/gsd:discuss-phase 5` (Firebase deploy)
+Resume with: `/gsd:discuss-phase 4.1` (List View Cleanup — inserted phase)

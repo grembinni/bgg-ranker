@@ -5,13 +5,13 @@
 See: .planning/PROJECT.md (updated 2026-05-26 after v1.0 milestone close)
 
 **Core value:** The user can always tell which of any two games they actually prefer, and the ranking list accurately reflects that — not BGG's community scores, not gut-feel star ratings.
-**Current focus:** Planning v1.1 — Phase 4.1 List View Cleanup (inserted before Phase 5)
+**Current focus:** v1.1 — Phase 5 Firebase Production Deploy
 
 ## Current Position
 
-Phase: 4.1 (List View Cleanup) — Complete (3/3 plans done)
-Status: Phase 4.1 complete; Phase 5 (Firebase Deploy) next
-Last activity: 2026-05-26 — Plan 04.1-03 complete: App.tsx wiring + ComparisonView buttons (3b24443)
+Phase: 4.1 (List View Cleanup) — VERIFIED (3/3 plans done, 6/6 SC met)
+Status: Phase 4.1 closed; Phase 5 (Firebase Deploy) next
+Last activity: 2026-05-26 — Phase 4.1 verified: RankedGridView + ComparisonView wiring complete (78bcbf1)
 
 Progress: [██████████] Phase 1 | [██████████] Phase 2 | [██████████] Phase 3 | [██████████] Phase 3.1 | [██████████] Phase 4 | [          ] Phase 5
 
@@ -22,6 +22,12 @@ Progress: [██████████] Phase 1 | [████████�
 - Timeline: 2026-05-25 → 2026-05-26 (2 days)
 - Commits: 33 (since v0.9 close)
 - Tests added: 169 total (was 162 at v0.9)
+
+**v1.1 Increment (Phase 4.1):**
+- Plans completed: 3
+- Timeline: 2026-05-26 (single day)
+- Tests added: 171 total (was 169 after Phase 4)
+- New component: RankedGridView (168 lines) — 10×10 DnD grid, 50-game pagination, session image cache
 
 ## Accumulated Context
 
@@ -67,5 +73,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-05-26
-Stopped at: Phase 4.1 Plan 03 complete — ranked-grid navigation wired end-to-end
-Resume with: `/gsd:verify-work 4.1` then `/gsd:discuss-phase 5` (Firebase Production Deploy)
+Stopped at: Phase 4.1 fully closed — VERIFICATION.md written, 6/6 SC met
+Resume with: `/gsd:discuss-phase 5` (Firebase Production Deploy)

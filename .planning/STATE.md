@@ -9,9 +9,9 @@ See: .planning/PROJECT.md (updated 2026-05-26 after v1.0 milestone close)
 
 ## Current Position
 
-Phase: 4.1 (List View Cleanup) — Planned (3 plans, ready to execute)
-Status: Planning complete; ready for /gsd:execute-phase 4.1
-Last activity: 2026-05-26 — Phase 4.1 planned (3 plans: store extension, RankedGridView component, App+ComparisonView wiring)
+Phase: 4.1 (List View Cleanup) — In progress (Plan 02 of 3 complete)
+Status: Executing; Plan 03 (App.tsx + ComparisonView wiring) remaining
+Last activity: 2026-05-26 — Plan 04.1-02 complete: RankedGridView component created (48d312d)
 
 Progress: [██████████] Phase 1 | [██████████] Phase 2 | [██████████] Phase 3 | [██████████] Phase 3.1 | [██████████] Phase 4 | [          ] Phase 5
 
@@ -35,6 +35,7 @@ Most recent decisions:
 - Phase 4: PERSIST-02 guard in login(), not fetchCollection()
 - Phase 4: Firebase Function routing — req.path replaces req.query['path']
 - v1.0 close: Phase 5 deferred to v1.1 (app feature-complete; production hosting separate)
+- Phase 4.1 Plan 02: Full-cell drag (no handle) for grid cells; safeOffset clamp prevents off-end pagination; preload incoming 50 (not 100) on page advance
 
 ### Roadmap Evolution
 

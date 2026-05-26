@@ -336,12 +336,9 @@ export function createAppStore(rawStorage: StateStorage) {
         },
 
         refresh(): void {
-          const newRatings = redistribute(get().ratings)
-          set({
-            ratings: newRatings,
-            dirtyGameIds: Object.keys(newRatings),
-            currentPair: selectRandomPair(newRatings, []),
-          })
+          const username = get().sessionUsername ?? get().rankingsUsername
+          if (!username) return
+          void get().fetchCollection(username)
         },
 
         markUnplayed(gameId: string): void {
@@ -474,17 +471,14 @@ export function createAppStore(rawStorage: StateStorage) {
                 set({ syncStatus: 'session-expired' })
                 return
               }
-              if (status === 400) {
-                const gameName = get().games[gameId]?.name ?? gameId
-                set({ syncSkippedGames: [...get().syncSkippedGames, gameName] })
-                get().markGameSynced(gameId)
-                if (i < syncQueue.length - 1) await delay(500)
-                continue
-              }
               const body = (err as { body?: string }).body
               const detail = `${status ? `HTTP ${status}` : 'network error'}${body ? ` — ${body}` : ''}`
-              set({ syncStatus: 'error', syncErrorDetail: detail })
-              return
+              console.error(`[startSync] skipping ${gameId}: ${detail}`)
+              const gameName = get().games[gameId]?.name ?? gameId
+              set({ syncSkippedGames: [...get().syncSkippedGames, gameName] })
+              get().markGameSynced(gameId)
+              if (i < syncQueue.length - 1) await delay(500)
+              continue
             }
 
             // Throttle between writes — skip delay after the last game
@@ -548,7 +542,7 @@ export function createAppStore(rawStorage: StateStorage) {
         logout(): void {
           get().cancelSync()
           // Clear session fields; do NOT clear ratings/games/rankingsUsername
-          set({ sessionId: null, sessionUsername: null, view: 'entry' })
+          set({ sessionId: null, sessionUsername: null, view: 'entry', comparisonsTotal: 0, sessionComparisons: 0 })
         },
       }),
       {

@@ -412,60 +412,31 @@ describe('skip action (RANK-04)', () => {
 })
 
 describe('refresh action (REFRESH-01)', () => {
-  it('calls redistribute and updates ratings (REFRESH-01)', () => {
-    const store = setupStoreWithGames(
-      makeGames(3),
-      { g0: 100, g1: 500, g2: 1000 }
-    )
-    const beforeRatings = { ...store.getState().ratings }
-
-    store.getState().refresh()
-
-    const afterRatings = store.getState().ratings
-    expect(afterRatings).not.toBe(beforeRatings)
-    Object.values(afterRatings).forEach((v) => {
-      expect(Number.isInteger(v)).toBe(true)
-      expect(v).toBeGreaterThanOrEqual(100)
-      expect(v).toBeLessThanOrEqual(1000)
-    })
-    const vals = Object.values(afterRatings)
-    expect(new Set(vals).size).toBe(vals.length)
-  })
-
-  it('preserves relative order (REFRESH-01)', () => {
-    const store = setupStoreWithGames(
-      makeGames(3),
-      { g0: 100, g1: 500, g2: 1000 }
-    )
-
-    store.getState().refresh()
-
-    const afterRatings = store.getState().ratings
-    const sorted = Object.entries(afterRatings)
-      .sort((a, b) => b[1] - a[1])
-      .map(([id]) => id)
-    expect(sorted).toEqual(['g2', 'g1', 'g0'])
-  })
-
-  it('does NOT increment comparison counters (REFRESH-01, RANK-05)', () => {
+  it('calls fetchCollection with current sessionUsername (REFRESH-01)', () => {
     const store = setupStoreWithGames(makeGames(3), makeRatings(3))
-    store.setState({ sessionComparisons: 5, comparisonsTotal: 100 })
+    store.setState({ sessionUsername: 'alice' } as Parameters<typeof store.setState>[0])
+    vi.mocked(mockBggFetch).mockResolvedValueOnce([])
 
     store.getState().refresh()
 
-    expect(store.getState().sessionComparisons).toBe(5)
-    expect(store.getState().comparisonsTotal).toBe(100)
+    expect(vi.mocked(mockBggFetch).mock.calls[0][0]).toBe('alice')
   })
 
-  it('selects a fresh currentPair after refresh (REFRESH-01)', () => {
-    const store = setupStoreWithGames(makeGames(5), makeRatings(5))
-    store.setState({ currentPair: null })
+  it('falls back to rankingsUsername when sessionUsername is null (REFRESH-01)', () => {
+    const store = setupStoreWithGames(makeGames(3), makeRatings(3), 'bob')
+    vi.mocked(mockBggFetch).mockResolvedValueOnce([])
 
     store.getState().refresh()
 
-    expect(store.getState().currentPair).not.toBeNull()
-    expect(Object.keys(store.getState().ratings)).toContain(store.getState().currentPair![0])
-    expect(Object.keys(store.getState().ratings)).toContain(store.getState().currentPair![1])
+    expect(vi.mocked(mockBggFetch).mock.calls[0][0]).toBe('bob')
+  })
+
+  it('does nothing when no username is available (REFRESH-01)', () => {
+    const store = createAppStore(createMockStorage())
+
+    store.getState().refresh()
+
+    expect(vi.mocked(mockBggFetch)).not.toHaveBeenCalled()
   })
 })
 

@@ -15,6 +15,7 @@ export default function ComparisonView() {
   const startSync = useStore(s => s.startSync)
   const markUnplayed = useStore(s => s.markUnplayed)
   const showRankedList = useStore(s => s.showRankedList)
+  const showRankedGrid = useStore(s => s.showRankedGrid)
   const showUnplayedList = useStore(s => s.showUnplayedList)
   const sessionId = useStore(s => s.sessionId)
   const lastUpset = useStore(s => s.lastUpset)
@@ -110,7 +111,14 @@ export default function ComparisonView() {
           onClick={showRankedList}
           className="px-6 py-2 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
         >
-          Ranked list
+          ☰ Ranked list
+        </button>
+        <button
+          type="button"
+          onClick={showRankedGrid}
+          className="px-6 py-2 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
+        >
+          ⊞ Grid view
         </button>
         <button
           type="button"

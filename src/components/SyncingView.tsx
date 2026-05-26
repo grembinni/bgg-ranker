@@ -9,6 +9,7 @@ export default function SyncingView() {
   const startSync = useStore((s) => s.startSync)
   const reAuthAndResume = useStore((s) => s.reAuthAndResume)
   const syncErrorDetail = useStore((s) => s.syncErrorDetail)
+  const syncSkippedGames = useStore((s) => s.syncSkippedGames)
 
   // password kept in local state only — never written to Zustand or localStorage
   const [reAuthPassword, setReAuthPassword] = useState<string>('')
@@ -30,8 +31,17 @@ export default function SyncingView() {
     return (
       <div className={container}>
         <p className="text-xl font-semibold text-green-600 text-center">
-          Sync complete — {syncProgress} games updated
+          Sync complete — {syncProgress - syncSkippedGames.length} games updated
         </p>
+        {syncSkippedGames.length > 0 && (
+          <ul className="mt-4 space-y-1">
+            {syncSkippedGames.map((name) => (
+              <li key={name} className="text-sm text-red-500">
+                Error syncing {name}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     )
   }
@@ -115,6 +125,15 @@ export default function SyncingView() {
       <p className="text-xl font-semibold text-gray-900 text-center mb-6">
         Syncing {syncProgress} / {syncTotal}…
       </p>
+      {syncSkippedGames.length > 0 && (
+        <ul className="mb-4 space-y-1">
+          {syncSkippedGames.map((name) => (
+            <li key={name} className="text-sm text-red-500">
+              Error syncing {name}
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="flex justify-center">
         <button
           type="button"

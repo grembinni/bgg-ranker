@@ -55,6 +55,7 @@ interface ComparisonStateSlice {
   syncProgress: number
   syncTotal: number
   syncErrorDetail: string | null
+  syncSkippedGames: string[]
   lastUpset: { winnerName: string; spotsGained: number } | null
 }
 
@@ -148,6 +149,7 @@ export function createAppStore(rawStorage: StateStorage) {
         syncProgress: 0,
         syncTotal: 0,
         syncErrorDetail: null,
+        syncSkippedGames: [],
         lastUpset: null,
 
         async fetchCollection(username: string): Promise<void> {
@@ -449,6 +451,7 @@ export function createAppStore(rawStorage: StateStorage) {
             syncProgress: 0,
             syncTotal: syncQueue.length,
             syncErrorDetail: null,
+            syncSkippedGames: [],
           })
 
           for (let i = 0; i < syncQueue.length; i++) {
@@ -470,6 +473,13 @@ export function createAppStore(rawStorage: StateStorage) {
               if (status === 401) {
                 set({ syncStatus: 'session-expired' })
                 return
+              }
+              if (status === 400) {
+                const gameName = get().games[gameId]?.name ?? gameId
+                set({ syncSkippedGames: [...get().syncSkippedGames, gameName] })
+                get().markGameSynced(gameId)
+                if (i < syncQueue.length - 1) await delay(500)
+                continue
               }
               const body = (err as { body?: string }).body
               const detail = `${status ? `HTTP ${status}` : 'network error'}${body ? ` — ${body}` : ''}`

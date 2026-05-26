@@ -12,6 +12,7 @@ let mockSyncStatus: 'idle' | 'syncing' | 'session-expired' | 'error' | 'complete
 let mockSyncProgress = 0
 let mockSyncTotal = 0
 let mockSyncErrorDetail: string | null = null
+let mockSyncSkippedGames: string[] = []
 
 vi.mock('../store/store', () => ({
   useStore: (selector: (s: Record<string, unknown>) => unknown) =>
@@ -20,6 +21,7 @@ vi.mock('../store/store', () => ({
       syncProgress: mockSyncProgress,
       syncTotal: mockSyncTotal,
       syncErrorDetail: mockSyncErrorDetail,
+      syncSkippedGames: mockSyncSkippedGames,
       cancelSync: mockCancelSync,
       reAuthAndResume: mockReAuthAndResume,
       startSync: mockStartSync,
@@ -34,6 +36,7 @@ beforeEach(() => {
   mockSyncProgress = 0
   mockSyncTotal = 0
   mockSyncErrorDetail = null
+  mockSyncSkippedGames = []
 })
 
 describe('SyncingView — syncStatus syncing (SYNC-01, SYNC-02)', () => {
@@ -147,5 +150,26 @@ describe('SyncingView — syncStatus complete (D-07, SYNC-01)', () => {
     render(<SyncingView />)
     expect(screen.getByText(/sync complete/i)).toBeInTheDocument()
     expect(screen.getByText(/7 games updated/i)).toBeInTheDocument()
+  })
+
+  it('shows skipped game names on complete when some games returned 400', () => {
+    mockSyncStatus = 'complete'
+    mockSyncProgress = 3
+    mockSyncSkippedGames = ['Wingspan', 'Gloomhaven']
+    render(<SyncingView />)
+    expect(screen.getByText(/Error syncing Wingspan/i)).toBeInTheDocument()
+    expect(screen.getByText(/Error syncing Gloomhaven/i)).toBeInTheDocument()
+    expect(screen.getByText(/1 games updated/i)).toBeInTheDocument()
+  })
+})
+
+describe('SyncingView — skipped games during sync', () => {
+  it('shows skipped game error inline while still syncing', () => {
+    mockSyncStatus = 'syncing'
+    mockSyncProgress = 5
+    mockSyncTotal = 10
+    mockSyncSkippedGames = ['Pandemic']
+    render(<SyncingView />)
+    expect(screen.getByText(/Error syncing Pandemic/i)).toBeInTheDocument()
   })
 })

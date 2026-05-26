@@ -25,4 +25,30 @@
 
 ---
 
-*Next milestone: v1.0 — Full Feature Release (Phase 4 display polish + Phase 5 Firebase deploy)*
+## v1.0 — Full Feature Release ✅ SHIPPED 2026-05-26
+
+**Phases:** 4 (display polish)
+**Timeline:** 2026-05-25 → 2026-05-26 (2 days)
+**Stats:** 33 commits · 43 files · 1,702 src LOC
+
+**What shipped:**
+- BGG cover art (192px) shown on every comparison card — DISP-01
+- Upset callout ("Game moved up N spots") with 5s auto-clear — DISP-02
+- Hamburger menu consolidates Sync/Refresh/Logout — cleaned comparison screen
+- PERSIST-02 auto-resume: same-user login calls `continueSession()` instead of re-fetching from BGG
+- Firebase Function routing fixed: `req.path` replaces `req.query['path']` for production API calls
+- Logout action preserves rankings; re-login resumes session instantly
+
+**Known gaps at close:**
+- Phase 5 (Firebase production deploy) deferred to v1.1
+- Phase 1 VERIFICATION.md absent — RANK-06/07/08/09 code correct but no formal verification doc
+- Firebase 1-cookie vs 3-cookie BGG auth — unverified in production
+
+**Archives:**
+- [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) — full phase details
+- [v1.0-REQUIREMENTS.md](milestones/v1.0-REQUIREMENTS.md) — final requirement status (19/24 satisfied, 4 partial doc-only, 1 deferred)
+- [v1.0-MILESTONE-AUDIT.md](milestones/v1.0-MILESTONE-AUDIT.md) — integration audit (23/23 wired, 0 blockers)
+
+---
+
+*Next milestone: v1.1 — Production Deploy (Phase 5 Firebase Cloud Function)*

@@ -27,10 +27,10 @@
 
 ### 📋 v1.1 Production Deploy
 
-- [ ] Phase 4.1: List View Cleanup (INSERTED) — 3 plans
+- [x] Phase 4.1: List View Cleanup (INSERTED) — 3 plans
   - [x] 04.1-01-PLAN.md — Store extension: add ranked-grid view state + showRankedGrid() action + tests
   - [x] 04.1-02-PLAN.md — RankedGridView component: 10x10 grid, DnD, pagination, image preloading
-  - [ ] 04.1-03-PLAN.md — Wiring: App.tsx view router + ComparisonView buttons
+  - [x] 04.1-03-PLAN.md — Wiring: App.tsx view router + ComparisonView buttons
 - [ ] Phase 5: Firebase Production Deploy (1 plan)
 
 **Phase 4.1 Goal:** The ranked list has two viewing modes — an existing simple text list (hamburger navigation) and a new 10×10 thumbnail grid view with drag-and-drop ranking. Grid shows 100 games at a time, shifts by 50, caches images for the session. Dirty flagging for unplayed→ranked game moves is verified.
@@ -62,5 +62,5 @@
 | 3. Auth & BGG Sync | v0.9 | 4/4 | Complete | 2026-05-24 |
 | 3.1. Sync Repair | v0.9 | 2/2 | Complete | 2026-05-25 |
 | 4. Display Polish | v1.0 | 4/4 | Complete | 2026-05-26 |
-| 4.1. List View Cleanup (INSERTED) | v1.1 | 2/3 | In progress | — |
+| 4.1. List View Cleanup (INSERTED) | v1.1 | 3/3 | Complete | 2026-05-26 |
 | 5. Firebase Deploy | v1.1 | 0/1 | Not started | — |

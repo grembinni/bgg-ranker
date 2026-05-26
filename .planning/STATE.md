@@ -9,9 +9,9 @@ See: .planning/PROJECT.md (updated 2026-05-26 after v1.0 milestone close)
 
 ## Current Position
 
-Phase: 4.1 (List View Cleanup) — In progress (Plan 02 of 3 complete)
-Status: Executing; Plan 03 (App.tsx + ComparisonView wiring) remaining
-Last activity: 2026-05-26 — Plan 04.1-02 complete: RankedGridView component created (48d312d)
+Phase: 4.1 (List View Cleanup) — Complete (3/3 plans done)
+Status: Phase 4.1 complete; Phase 5 (Firebase Deploy) next
+Last activity: 2026-05-26 — Plan 04.1-03 complete: App.tsx wiring + ComparisonView buttons (3b24443)
 
 Progress: [██████████] Phase 1 | [██████████] Phase 2 | [██████████] Phase 3 | [██████████] Phase 3.1 | [██████████] Phase 4 | [          ] Phase 5
 
@@ -36,6 +36,7 @@ Most recent decisions:
 - Phase 4: Firebase Function routing — req.path replaces req.query['path']
 - v1.0 close: Phase 5 deferred to v1.1 (app feature-complete; production hosting separate)
 - Phase 4.1 Plan 02: Full-cell drag (no handle) for grid cells; safeOffset clamp prevents off-end pagination; preload incoming 50 (not 100) on page advance
+- Phase 4.1 Plan 03: ComparisonView hamburger prefix on Ranked list (D-01); Grid view button wired to showRankedGrid(); RankedListView unchanged (D-03)
 
 ### Roadmap Evolution
 
@@ -66,5 +67,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-05-26
-Stopped at: v1.0 milestone archive complete — ready to start v1.1
-Resume with: `/gsd:discuss-phase 4.1` (List View Cleanup — inserted phase)
+Stopped at: Phase 4.1 Plan 03 complete — ranked-grid navigation wired end-to-end
+Resume with: `/gsd:verify-work 4.1` then `/gsd:discuss-phase 5` (Firebase Production Deploy)

@@ -934,6 +934,81 @@ describe('pick() upset detection (D-01, D-02, D-03)', () => {
   })
 })
 
+describe('markUnplayed() dirty tracking (SYNC-03)', () => {
+  it('adds the game ID to dirtyGameIds when marked unplayed', () => {
+    const store = setupStoreWithGames(makeGames(3), makeRatings(3))
+    store.setState({ dirtyGameIds: [] })
+    store.getState().markUnplayed('g1')
+    expect(store.getState().dirtyGameIds).toContain('g1')
+  })
+
+  it('does not duplicate an ID already in dirtyGameIds', () => {
+    const store = setupStoreWithGames(makeGames(3), makeRatings(3))
+    store.setState({ dirtyGameIds: ['g1'] })
+    store.getState().markUnplayed('g1')
+    expect(store.getState().dirtyGameIds.filter(id => id === 'g1').length).toBe(1)
+  })
+})
+
+describe('reorderRankedList() dirty tracking (SYNC-03)', () => {
+  it('marks IDs whose ratings changed after reorder as dirty', () => {
+    const games = makeGames(3)
+    const ratings = makeRatings(3)
+    const store = setupStoreWithGames(games, ratings)
+    store.setState({ dirtyGameIds: [] })
+    const original = Object.keys(ratings).sort((a, b) => ratings[b] - ratings[a])
+    const reversed = [...original].reverse()
+    store.getState().reorderRankedList(reversed)
+    const dirty = store.getState().dirtyGameIds
+    expect(dirty.length).toBeGreaterThan(0)
+    for (const id of dirty) {
+      expect(store.getState().ratings[id]).not.toBe(ratings[id])
+    }
+  })
+
+  it('does not mark IDs whose ratings did not change', () => {
+    const games = makeGames(3)
+    const ratings = makeRatings(3)
+    const store = setupStoreWithGames(games, ratings)
+    const sameOrder = Object.keys(ratings).sort((a, b) => ratings[b] - ratings[a])
+    // First call establishes initializeRankings-derived ratings for this order
+    store.getState().reorderRankedList(sameOrder)
+    store.setState({ dirtyGameIds: [] })
+    // Second call with identical order — initializeRankings is deterministic, so no ratings change
+    store.getState().reorderRankedList(sameOrder)
+    expect(store.getState().dirtyGameIds.length).toBe(0)
+  })
+})
+
+describe('moveUnplayedToRanked() dirty tracking (SYNC-03)', () => {
+  it('adds IDs whose ratings changed after insertion to dirtyGameIds', () => {
+    const games = makeGames(3)
+    const ratings = makeRatings(3)
+    const store = setupStoreWithGames(games, ratings)
+    store.setState({ unplayedIds: ['g2'], dirtyGameIds: [] })
+    const { ratings: r } = store.getState()
+    const before = { ...r }
+    store.getState().moveUnplayedToRanked('g2', 1)
+    const dirty = store.getState().dirtyGameIds
+    expect(dirty.length).toBeGreaterThan(0)
+    for (const id of dirty) {
+      expect(store.getState().ratings[id]).not.toBe(before[id])
+    }
+  })
+
+  it('moves game from unplayedIds to ratings and marks it dirty', () => {
+    const games = makeGames(2)
+    const ratings = makeRatings(2)
+    const store = setupStoreWithGames(games, ratings)
+    store.setState({ unplayedIds: ['g0'], dirtyGameIds: [] })
+    store.setState({ ratings: { g1: 500 } })
+    store.getState().moveUnplayedToRanked('g0', 1)
+    expect(store.getState().unplayedIds).not.toContain('g0')
+    expect('g0' in store.getState().ratings).toBe(true)
+    expect(store.getState().dirtyGameIds).toContain('g0')
+  })
+})
+
 describe('login() always fetches from BGG', () => {
   it('always calls fetchCollection regardless of stored rankings — BGG is authoritative', async () => {
     vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'sess123' })

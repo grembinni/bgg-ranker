@@ -7,6 +7,7 @@ import ErrorDisplay from './components/ErrorDisplay'
 import SyncingView from './components/SyncingView'
 import RankedListView from './components/RankedListView'
 import UnplayedListView from './components/UnplayedListView'
+import RankedGridView from './components/RankedGridView'
 
 function App() {
   const view = useStore(s => s.view)
@@ -32,6 +33,7 @@ function App() {
       {view === 'syncing' && <SyncingView />}
       {view === 'ranked-list' && <RankedListView />}
       {view === 'unplayed-list' && <UnplayedListView />}
+      {view === 'ranked-grid' && <RankedGridView />}
     </div>
   )
 }

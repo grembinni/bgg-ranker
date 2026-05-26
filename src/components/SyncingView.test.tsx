@@ -29,6 +29,7 @@ const mockStartSync = vi.fn()
 let mockSyncStatus: 'idle' | 'syncing' | 'session-expired' | 'error' | 'complete' = 'syncing'
 let mockSyncProgress = 0
 let mockSyncTotal = 0
+let mockSyncErrorDetail: string | null = null
 
 vi.mock('../store/store', () => ({
   useStore: (selector: (s: Record<string, unknown>) => unknown) =>
@@ -36,6 +37,7 @@ vi.mock('../store/store', () => ({
       syncStatus: mockSyncStatus,
       syncProgress: mockSyncProgress,
       syncTotal: mockSyncTotal,
+      syncErrorDetail: mockSyncErrorDetail,
       cancelSync: mockCancelSync,
       reAuthAndResume: mockReAuthAndResume,
       startSync: mockStartSync,
@@ -53,6 +55,7 @@ beforeEach(() => {
   mockSyncStatus = 'syncing'
   mockSyncProgress = 0
   mockSyncTotal = 0
+  mockSyncErrorDetail = null
 })
 
 // ---------------------------------------------------------------------------
@@ -156,6 +159,18 @@ describe('SyncingView — syncStatus error', () => {
     render(<SyncingView />)
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
     expect(mockCancelSync).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows syncErrorDetail when present', () => {
+    mockSyncErrorDetail = 'HTTP 403'
+    render(<SyncingView />)
+    expect(screen.getByText(/HTTP 403/)).toBeInTheDocument()
+  })
+
+  it('shows no error detail when syncErrorDetail is null', () => {
+    mockSyncErrorDetail = null
+    render(<SyncingView />)
+    expect(screen.queryByText(/HTTP/)).not.toBeInTheDocument()
   })
 })
 

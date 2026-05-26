@@ -72,6 +72,7 @@ export function computeTierAllocations(
   gameCount: number,
   weights: readonly number[] = TIER_WEIGHTS
 ): number[] {
+  const MAX_PER_TIER = 99
   const total = weights.reduce((a, b) => a + b, 0)
   const exact = weights.map((w) => (w / total) * gameCount)
   const floored = exact.map(Math.floor)
@@ -82,6 +83,34 @@ export function computeTierAllocations(
     .sort((a, b) => b.rem - a.rem)
     .slice(0, deficit)
     .forEach(({ idx }) => floored[idx]++)
+
+  // Cap each tier at 99 slots. Redistribute overflow symmetrically: split evenly
+  // between the immediate left (higher tier) and right (lower tier) neighbors,
+  // cascading outward until all overflow is absorbed.
+  const overflows: { from: number; amount: number }[] = []
+  for (let i = 0; i < floored.length; i++) {
+    if (floored[i] > MAX_PER_TIER) {
+      overflows.push({ from: i, amount: floored[i] - MAX_PER_TIER })
+      floored[i] = MAX_PER_TIER
+    }
+  }
+  for (const { from, amount } of overflows) {
+    let remaining = amount
+    for (let reach = 1; remaining > 0 && reach < floored.length; reach++) {
+      const targets: number[] = []
+      const left = from - reach
+      const right = from + reach
+      if (left >= 0 && floored[left] < MAX_PER_TIER) targets.push(left)
+      if (right < floored.length && floored[right] < MAX_PER_TIER) targets.push(right)
+      for (let t = 0; t < targets.length && remaining > 0; t++) {
+        // Distribute evenly across available targets; first target gets the odd unit
+        const share = Math.ceil(remaining / (targets.length - t))
+        const add = Math.min(share, MAX_PER_TIER - floored[targets[t]])
+        floored[targets[t]] += add
+        remaining -= add
+      }
+    }
+  }
 
   return floored
 }
@@ -132,8 +161,8 @@ export function assignRatings(
         // Single game in tier — assign the tier maximum
         rating = tierMaxInt
       } else {
-        // Equal spacing: step = floor(availableSlots / (count - 1))
-        const step = Math.floor(availableSlots / (count - 1))
+        // Equal spacing: step = floor(availableSlots / (count - 1)), minimum 1
+        const step = Math.max(1, Math.floor(availableSlots / (count - 1)))
         rating = tierMaxInt - pos * step
         // Clamp to tier minimum in case rounding pushes below
         if (rating < tierMinInt) {

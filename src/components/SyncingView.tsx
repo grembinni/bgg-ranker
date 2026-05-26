@@ -20,6 +20,7 @@ export default function SyncingView() {
   const cancelSync = useStore((s) => s.cancelSync)
   const startSync = useStore((s) => s.startSync)
   const reAuthAndResume = useStore((s) => s.reAuthAndResume)
+  const syncErrorDetail = useStore((s) => s.syncErrorDetail)
 
   // T-03-09: password kept in local state only — cleared on unmount; never persisted
   const [reAuthPassword, setReAuthPassword] = useState<string>('')
@@ -96,7 +97,12 @@ export default function SyncingView() {
     return (
       <div className={container}>
         <div className="border border-red-200 rounded-lg p-4 bg-white" role="alert">
-          <p className="text-base text-red-600 mb-3">Sync failed. Please try again.</p>
+          <p className="text-base text-red-600 mb-3">
+            Sync failed. Please try again.
+            {syncErrorDetail && (
+              <span className="block text-xs text-red-400 mt-1 font-mono break-all">{syncErrorDetail}</span>
+            )}
+          </p>
           <div className="flex gap-3">
             <button
               type="button"

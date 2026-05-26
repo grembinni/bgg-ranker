@@ -36,6 +36,7 @@ const RETRY_DELAY_MS = 3000
 
 export interface RawGame {
   id: string
+  collId: string             // BGG collection-item ID — used for PUT /api/collectionitem/{collId}
   name: string
   yearPublished: number
   thumbnail: string
@@ -87,6 +88,7 @@ export function parseCollectionXml(xmlText: string): RawGame[] {
             : null
       return {
         id: String(it['@_objectid'] ?? ''),
+        collId: String(it['@_collid'] ?? ''),
         name: decodeHtmlEntities(String(nameEl?.['#text'] ?? '')),
         yearPublished: Number(it['yearpublished'] ?? 0),
         thumbnail: String(it['thumbnail'] ?? ''),
@@ -205,46 +207,49 @@ export async function bggLogin(
 // ---------------------------------------------------------------------------
 
 /**
- * bggRateGame — Write a single game rating to BGG via the undocumented geekrating endpoint.
+ * bggRateGame — Write a single game rating to BGG via PUT /api/collectionitem/{collId}.
  *
  * ratingInt is integer-internal (e.g. 743 = 7.43). The float conversion happens
  * here — never stored or passed as a float anywhere else (D-10).
  *
- * @param gameId - BGG objectid string
- * @param ratingInt - Integer-internal rating (e.g. 743 represents 7.43)
+ * @param collId - BGG collection-item ID (from @_collid in collection XML, not objectid)
+ * @param objectId - BGG objectid (game ID) — included in the PUT body
+ * @param ratingInt - Integer-internal rating (e.g. 743 represents 7.43); null removes the rating
  * @param sessionId - Session token from bggLogin; sent as X-BGG-Session header (D-18)
  * @throws Error with .status property on non-2xx response (caller detects 401 for session-expired)
  */
 export async function bggRateGame(
-  gameId: string,
+  collId: string,
+  objectId: string,
   ratingInt: number | null,
   sessionId: string
 ): Promise<void> {
-  // null → send rating=0 which removes the game's rating from BGG
-  const ratingFloat = ratingInt === null ? '0' : (ratingInt / 100).toFixed(2)
+  // null → send rating 0 which removes the game's rating from BGG
+  const rating = ratingInt === null ? 0 : ratingInt / 100
 
-  const body = new URLSearchParams({
-    objectid: gameId,
-    objecttype: 'thing',
-    rating: ratingFloat,
-    ajax: '1',
-  })
-
-  const res = await fetch(`${BGG_API_BASE}/api/geekrating`, {
-    method: 'POST',
+  const res = await fetch(`${BGG_API_BASE}/api/collectionitem/${collId}`, {
+    method: 'PUT',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/json',
       'X-BGG-Session': sessionId,
     },
-    body: body.toString(),
+    body: JSON.stringify({
+      item: {
+        collid: collId,
+        objecttype: 'thing',
+        objectid: objectId,
+        rating,
+      },
+    }),
   })
 
   if (!res.ok) {
     const text = await res.text().catch(() => '')
-    console.error(`[bggRateGame] HTTP ${res.status} for game ${gameId}:`, text.slice(0, 200))
-    // Attach .status so caller can detect 401 session-expired (D-18, Pattern 2)
+    console.error(`[bggRateGame] HTTP ${res.status} for collId ${collId} (objectId ${objectId}):`, text.slice(0, 200))
+    // Attach .status and .body so caller can surface diagnostic detail (D-18, Pattern 2)
     throw Object.assign(new Error('BGG write failed: HTTP ' + res.status), {
       status: res.status,
+      body: text.slice(0, 120),
     })
   }
 }

@@ -29,6 +29,7 @@ import {
 
 export interface Game {
   id: string
+  collId: string             // BGG collection-item ID for PUT /api/collectionitem/{collId}
   name: string
   yearPublished: number
   thumbnail: string
@@ -70,6 +71,7 @@ interface ComparisonStateSlice {
   syncStatus: 'idle' | 'syncing' | 'session-expired' | 'error' | 'complete' // Q3
   syncProgress: number  // games written so far in current sync batch
   syncTotal: number     // total games to write in current sync batch
+  syncErrorDetail: string | null  // session-only; populated on error for diagnostics display
   lastUpset: { winnerName: string; spotsGained: number } | null  // D-03: session-only, not persisted
 }
 
@@ -159,9 +161,6 @@ let completeSyncTimer: ReturnType<typeof setTimeout> | null = null
  */
 let upsetTimer: ReturnType<typeof setTimeout> | null = null
 
-// Temporary: sync only games rated 9.00+ (ratingInt >= 900) for initial testing.
-// Set to false to restore full sync of all dirty games.
-const SYNC_HIGH_RATED_ONLY = true
 
 // ---------------------------------------------------------------------------
 // Store factory (injectable storage for testing)
@@ -203,6 +202,7 @@ export function createAppStore(rawStorage: StateStorage) {
         syncStatus: 'idle',
         syncProgress: 0,
         syncTotal: 0,
+        syncErrorDetail: null,
         lastUpset: null,
 
         // --- Actions ---
@@ -226,15 +226,17 @@ export function createAppStore(rawStorage: StateStorage) {
           try {
             const games: RawGame[] = await bggFetchCollection(username, get().sessionId ?? undefined)
 
-            // Capacity check — surface user-friendly error before any state mutation
+            // Capacity check on rated games only — unrated games go to the unplayed list
+            // and don't consume ranking slots (990-game limit applies to ranked games only)
+            const ratedCount = games.filter(g => g.userRating !== null).length
             try {
-              validateTierCapacity(games.length)
+              validateTierCapacity(ratedCount)
             } catch (e) {
               if (e instanceof TierCapacityError) {
                 set({
                   view: 'error',
                   errorMessage:
-                    'Your collection has ' +
+                    'Your rated collection has ' +
                     e.gameCount +
                     ' games, which exceeds the 990-game limit. Remove some games from your BGG collection and try again.',
                 })
@@ -248,6 +250,7 @@ export function createAppStore(rawStorage: StateStorage) {
             for (const g of games) {
               gamesMap[g.id] = {
                 id: g.id,
+                collId: g.collId,
                 name: g.name,
                 yearPublished: g.yearPublished,
                 thumbnail: g.thumbnail,
@@ -255,14 +258,15 @@ export function createAppStore(rawStorage: StateStorage) {
               }
             }
 
-            // Seed from BGG ratings: rated games descending, unrated shuffled after
+            // Seed ranked list from BGG-rated games only (descending by existing rating).
+            // Unrated games start in the unplayed list — user promotes them via "Unplayed" flow.
             const ratedGames = games
               .filter(g => g.userRating !== null)
               .sort((a, b) => (b.userRating ?? 0) - (a.userRating ?? 0))
-            const unratedGames = games
+            const unratedIds = games
               .filter(g => g.userRating === null)
-              .sort(() => Math.random() - 0.5)
-            const orderedIds = [...ratedGames, ...unratedGames].map(g => g.id)
+              .map(g => g.id)
+            const orderedIds = ratedGames.map(g => g.id)
             const ratings = initializeRankings(orderedIds, undefined, true)
 
             // Compute first pair
@@ -279,6 +283,7 @@ export function createAppStore(rawStorage: StateStorage) {
               skipQueue: [],
               loadingMessage: null,
               errorMessage: null,
+              unplayedIds: unratedIds,
               // All freshly-seeded games need a sync to BGG (D-04)
               dirtyGameIds: Object.keys(ratings),
             })
@@ -412,12 +417,12 @@ export function createAppStore(rawStorage: StateStorage) {
         },
 
         reorderRankedList(newOrderedIds: string[]): void {
+          const prevRatings = get().ratings
           const newRatings = initializeRankings(newOrderedIds, undefined, true)
+          const changedIds = newOrderedIds.filter(id => newRatings[id] !== prevRatings[id])
           set({
             ratings: newRatings,
-            // initializeRankings redistributes all ratings — mark every game dirty
-            dirtyGameIds: [...new Set([...get().dirtyGameIds, ...newOrderedIds])],
-            // Treat a manual reorder as a comparison so the Sync button activates
+            dirtyGameIds: [...new Set([...get().dirtyGameIds, ...changedIds])],
             comparisonsTotal: get().comparisonsTotal + 1,
           })
         },
@@ -430,12 +435,13 @@ export function createAppStore(rawStorage: StateStorage) {
             .map(([id]) => id)
           const insertIdx = Math.max(0, Math.min(targetRank - 1, sorted.length))
           const newOrder = [...sorted.slice(0, insertIdx), gameId, ...sorted.slice(insertIdx)]
+          const prevRatings2 = get().ratings
           const newRatings = initializeRankings(newOrder, undefined, true)
+          const changedIds = newOrder.filter(id => newRatings[id] !== prevRatings2[id])
           set({
             ratings: newRatings,
             unplayedIds: unplayedIds.filter(id => id !== gameId),
-            // initializeRankings redistributes all ratings — mark every game in newOrder dirty
-            dirtyGameIds: [...new Set([...get().dirtyGameIds, ...newOrder])],
+            dirtyGameIds: [...new Set([...get().dirtyGameIds, ...changedIds])],
             comparisonsTotal: get().comparisonsTotal + 1,
           })
         },
@@ -451,25 +457,15 @@ export function createAppStore(rawStorage: StateStorage) {
           try {
             const result = await bggLogin(username, password)
             set({ sessionId: result.sessionId, sessionUsername: username })
-
-            // D-07: auto-resume if stored rankings belong to this user (PERSIST-02 guard)
-            const state = get()
-            if (
-              state.rankingsUsername === username &&
-              Object.keys(state.ratings).length > 0 &&
-              Object.keys(state.games).length > 0
-            ) {
-              get().continueSession()
-            } else {
-              set({ loadingMessage: 'Fetching your games…' })
-              await get().fetchCollection(username)
-            }
+            // Always fetch from BGG — BGG ratings are authoritative, local state is reset
+            set({ loadingMessage: 'Fetching your games…' })
+            await get().fetchCollection(username)
           } catch {
             set({
               view: 'error',
               errorMessage: 'Could not log in. Check your username and password.',
               loadingMessage: null,
-              sessionId: null,   // discard orphaned token on login failure
+              sessionId: null,
             })
           }
         },
@@ -479,17 +475,34 @@ export function createAppStore(rawStorage: StateStorage) {
           const { dirtyGameIds, sessionId } = get()
           if (!sessionId) return
 
+          // One-time migration: localStorage data predating the collId field will have games
+          // without collId. Re-fetch the collection and patch collId into existing game entries
+          // without touching ratings or comparison history.
+          if (dirtyGameIds.some(id => !get().games[id]?.collId)) {
+            const username = get().sessionUsername
+            if (username) {
+              try {
+                const freshGames = await bggFetchCollection(username, sessionId)
+                const patchedGames = { ...get().games }
+                for (const g of freshGames) {
+                  if (patchedGames[g.id]) {
+                    patchedGames[g.id] = { ...patchedGames[g.id], collId: g.collId }
+                  }
+                }
+                set({ games: patchedGames })
+              } catch { /* proceed — games still missing collId will be skipped individually */ }
+            }
+          }
+
           // Snapshot dirty set — iterate a copy so in-flight markGameSynced() removals are safe
-          const toSync = [...dirtyGameIds]
-          const syncQueue = SYNC_HIGH_RATED_ONLY
-            ? toSync.filter(id => (get().ratings[id] ?? 0) >= 900)
-            : toSync
+          const syncQueue = [...get().dirtyGameIds]
 
           set({
             view: 'syncing',
             syncStatus: 'syncing',
             syncProgress: 0,
             syncTotal: syncQueue.length,
+            syncErrorDetail: null,
           })
 
           for (let i = 0; i < syncQueue.length; i++) {
@@ -502,8 +515,11 @@ export function createAppStore(rawStorage: StateStorage) {
             const ratingInt = get().unplayedIds.includes(gameId) ? null : get().ratings[gameId]
             // Guard: skip games that are dirty but no longer in ratings (evicted between snapshots)
             if (ratingInt === undefined) continue
+            const game = get().games[gameId]
+            // Guard: skip if game data missing (edge case — evicted from collection between snapshots)
+            if (!game?.collId) continue
             try {
-              await bggRateGame(gameId, ratingInt, currentSessionId)
+              await bggRateGame(game.collId, game.id, ratingInt, currentSessionId)
               // Re-check after the async write — user may have cancelled while awaiting
               if (!get().sessionId) return
               get().markGameSynced(gameId)
@@ -515,7 +531,9 @@ export function createAppStore(rawStorage: StateStorage) {
                 return
               }
               // Non-401 error: surface to user, stop sync
-              set({ syncStatus: 'error' })
+              const body = (err as { body?: string }).body
+              const detail = `${status ? `HTTP ${status}` : 'network error'}${body ? ` — ${body}` : ''}`
+              set({ syncStatus: 'error', syncErrorDetail: detail })
               return
             }
 
@@ -550,7 +568,7 @@ export function createAppStore(rawStorage: StateStorage) {
         async reAuthAndResume(password: string): Promise<void> {
           const username = get().sessionUsername
           if (!username) {
-            set({ syncStatus: 'error' })
+            set({ syncStatus: 'error', syncErrorDetail: 'no session username' })
             return
           }
           try {
@@ -564,8 +582,11 @@ export function createAppStore(rawStorage: StateStorage) {
             }
             // Resume from where sync left off — dirtyGameIds contains remaining un-synced games (D-10)
             await get().startSync()
-          } catch {
-            set({ syncStatus: 'error' })
+          } catch (err) {
+            const status = (err as { status?: number }).status
+            const body = (err as { body?: string }).body
+            const detail = `${status ? `HTTP ${status}` : 'network error'}${body ? ` — ${body}` : ''}`
+            set({ syncStatus: 'error', syncErrorDetail: detail })
           }
         },
 

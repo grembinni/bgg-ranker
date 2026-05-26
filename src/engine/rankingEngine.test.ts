@@ -96,8 +96,9 @@ describe('computeTierAllocations — RANK-06 bell-curve distribution', () => {
     expect(allocs[5]).toBe(30)
   })
 
-  it('higher-weight tiers get more games than lower-weight tiers for large n (RANK-06)', () => {
-    const allocs = computeTierAllocations(990)
+  it('higher-weight tiers get more games than lower-weight tiers for small n (RANK-06)', () => {
+    // For collections within the per-tier cap (≤373 games), bell curve shape is preserved.
+    const allocs = computeTierAllocations(200)
     // Index 5 (weight 30) > index 0 (weight 2) — bell curve shape confirmed
     expect(allocs[5]).toBeGreaterThan(allocs[0])
     expect(allocs[5]).toBeGreaterThan(allocs[9])
@@ -143,18 +144,39 @@ describe('assignRatings — RANK-07 unique ratings', () => {
     expect(new Set(values).size).toBe(values.length)
   })
 
-  it('all ratings unique for 373 games — max unique-rating boundary (RANK-07)', () => {
-    // 373 is the maximum collection size that guarantees unique ratings with bell-curve weights.
-    // With weights [2,6,12,18,24,30,10,5,3,3] (sum=113), tier 5 gets floor(30/113*373)=99 games,
-    // which exactly fills its 99 available integer slots (step=1, all unique).
-    // Beyond 373, tier 5 gets >99 games and equal spacing produces step=0 (duplicate ratings).
-    // MAX_GAMES=990 is the capacity ceiling enforced by validateTierCapacity; uniqueness is
-    // guaranteed up to 373 games with the current bell-curve weight distribution.
+  it('all ratings unique for 373 games (RANK-07)', () => {
     const ids = makeIds(373)
     const allocs = computeTierAllocations(373)
     const ratings = assignRatings(ids, allocs)
     const values = Object.values(ratings)
     expect(new Set(values).size).toBe(373)
+  })
+
+  it('all ratings unique for 400 games — overflow tier is capped and redistributed (RANK-07)', () => {
+    // 400 games previously caused tier 5 to exceed 99 slots (step=0 → all games rated 5.00).
+    // computeTierAllocations now caps each tier at 99 and redistributes overflow.
+    const ids = makeIds(400)
+    const allocs = computeTierAllocations(400)
+    const ratings = assignRatings(ids, allocs)
+    const values = Object.values(ratings)
+    expect(new Set(values).size).toBe(400)
+  })
+
+  it('no tier allocation exceeds 99 for any collection size up to 990 (RANK-07)', () => {
+    for (const n of [374, 400, 500, 700, 990]) {
+      const allocs = computeTierAllocations(n)
+      for (const a of allocs) {
+        expect(a).toBeLessThanOrEqual(99)
+      }
+    }
+  })
+
+  it('all ratings unique for 990 games (RANK-07)', () => {
+    const ids = makeIds(990)
+    const allocs = computeTierAllocations(990)
+    const ratings = assignRatings(ids, allocs)
+    const values = Object.values(ratings)
+    expect(new Set(values).size).toBe(990)
   })
 })
 

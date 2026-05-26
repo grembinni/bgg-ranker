@@ -47,6 +47,7 @@ function makeGames(n: number): Record<string, Game> {
   for (let i = 0; i < n; i++) {
     games[`g${i}`] = {
       id: `g${i}`,
+      collId: `coll-g${i}`,
       name: `Game ${i}`,
       yearPublished: 2000 + i,
       thumbnail: '',
@@ -99,11 +100,11 @@ function setupStoreWithGames(
 describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
   it('calls initializeRankings and seeds integer ratings on first load for this user (RANK-01)', async () => {
     vi.mocked(mockBggFetch).mockResolvedValueOnce([
-      { id: 'g0', name: 'A', yearPublished: 2020, thumbnail: '', userRating: null },
-      { id: 'g1', name: 'B', yearPublished: 2021, thumbnail: '', userRating: null },
-      { id: 'g2', name: 'C', yearPublished: 2022, thumbnail: '', userRating: null },
-      { id: 'g3', name: 'D', yearPublished: 2023, thumbnail: '', userRating: null },
-      { id: 'g4', name: 'E', yearPublished: 2024, thumbnail: '', userRating: null },
+      { id: 'g0', collId: 'c0', name: 'A', yearPublished: 2020, thumbnail: '', userRating: 7 },
+      { id: 'g1', collId: 'c1', name: 'B', yearPublished: 2021, thumbnail: '', userRating: 8 },
+      { id: 'g2', collId: 'c2', name: 'C', yearPublished: 2022, thumbnail: '', userRating: 6 },
+      { id: 'g3', collId: 'c3', name: 'D', yearPublished: 2023, thumbnail: '', userRating: 5 },
+      { id: 'g4', collId: 'c4', name: 'E', yearPublished: 2024, thumbnail: '', userRating: 9 },
     ])
 
     const store = createAppStore(createMockStorage())
@@ -148,9 +149,9 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
 
   it('discards stored rankings and reseeds when entered username differs from rankingsUsername (PERSIST-02)', async () => {
     vi.mocked(mockBggFetch).mockResolvedValueOnce([
-      { id: 'new0', name: 'New Game 0', yearPublished: 2020, thumbnail: '', userRating: null },
-      { id: 'new1', name: 'New Game 1', yearPublished: 2021, thumbnail: '', userRating: null },
-      { id: 'new2', name: 'New Game 2', yearPublished: 2022, thumbnail: '', userRating: null },
+      { id: 'new0', collId: 'c0', name: 'New Game 0', yearPublished: 2020, thumbnail: '', userRating: 7 },
+      { id: 'new1', collId: 'c1', name: 'New Game 1', yearPublished: 2021, thumbnail: '', userRating: 8 },
+      { id: 'new2', collId: 'c2', name: 'New Game 2', yearPublished: 2022, thumbnail: '', userRating: 6 },
     ])
 
     const store = createAppStore(createMockStorage())
@@ -174,10 +175,11 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
   it('sets view to error and does NOT mutate ratings when collection exceeds 990 games (RANK-10/COLL-01)', async () => {
     const manyGames = Array.from({ length: 991 }, (_, i) => ({
       id: `game${i}`,
+      collId: `c${i}`,
       name: `Game ${i}`,
       yearPublished: 2000,
       thumbnail: '',
-      userRating: null,
+      userRating: 7,  // rated so they count toward capacity limit
     }))
     vi.mocked(mockBggFetch).mockResolvedValueOnce(manyGames)
 
@@ -605,6 +607,11 @@ describe('startSync action (SYNC-01, SYNC-02)', () => {
       ratings: { g0: 900, g1: 901, g2: 902 },
       sessionId: 'active-session',
       dirtyGameIds: ['g0', 'g1', 'g2'],
+      games: {
+        g0: { id: 'g0', collId: 'coll-g0', name: 'G0', yearPublished: 2020, thumbnail: '' },
+        g1: { id: 'g1', collId: 'coll-g1', name: 'G1', yearPublished: 2020, thumbnail: '' },
+        g2: { id: 'g2', collId: 'coll-g2', name: 'G2', yearPublished: 2020, thumbnail: '' },
+      },
     } as Parameters<typeof store.setState>[0])
 
     await store.getState().startSync()
@@ -620,13 +627,18 @@ describe('startSync action (SYNC-01, SYNC-02)', () => {
       ratings: { g0: 900, g1: 901, g2: 902 },
       sessionId: 'active-session',
       dirtyGameIds: ['g1', 'g2'], // g0 already clean — not in dirty set
+      games: {
+        g0: { id: 'g0', collId: 'coll-g0', name: 'G0', yearPublished: 2020, thumbnail: '' },
+        g1: { id: 'g1', collId: 'coll-g1', name: 'G1', yearPublished: 2020, thumbnail: '' },
+        g2: { id: 'g2', collId: 'coll-g2', name: 'G2', yearPublished: 2020, thumbnail: '' },
+      },
     } as Parameters<typeof store.setState>[0])
 
     await store.getState().startSync()
 
     expect(vi.mocked(mockBggRateGame)).toHaveBeenCalledTimes(2)
-    const calledWith = vi.mocked(mockBggRateGame).mock.calls.map(c => c[0])
-    expect(calledWith).not.toContain('g0')
+    const calledCollIds = vi.mocked(mockBggRateGame).mock.calls.map(c => c[0])
+    expect(calledCollIds).not.toContain('coll-g0')
   })
 
   it('startSync() increments syncProgress after each successful write (SYNC-02)', async () => {
@@ -637,6 +649,10 @@ describe('startSync action (SYNC-01, SYNC-02)', () => {
       ratings: { g0: 900, g1: 901 },
       sessionId: 'active-session',
       dirtyGameIds: ['g0', 'g1'],
+      games: {
+        g0: { id: 'g0', collId: 'coll-g0', name: 'G0', yearPublished: 2020, thumbnail: '' },
+        g1: { id: 'g1', collId: 'coll-g1', name: 'G1', yearPublished: 2020, thumbnail: '' },
+      },
     } as Parameters<typeof store.setState>[0])
 
     await store.getState().startSync()
@@ -654,6 +670,9 @@ describe('startSync action (SYNC-01, SYNC-02)', () => {
       ratings: { g0: 900 },
       sessionId: 'active-session',
       dirtyGameIds: ['g0'],
+      games: {
+        g0: { id: 'g0', collId: 'coll-g0', name: 'G0', yearPublished: 2020, thumbnail: '' },
+      },
     } as Parameters<typeof store.setState>[0])
 
     await store.getState().startSync()
@@ -730,6 +749,9 @@ describe('reAuthAndResume action (AUTH-03)', () => {
       sessionId: 'old-session',
       ratings: { g0: 900 },
       dirtyGameIds: ['g0'],
+      games: {
+        g0: { id: 'g0', collId: 'coll-g0', name: 'G0', yearPublished: 2020, thumbnail: '' },
+      },
     } as Parameters<typeof store.setState>[0])
 
     await store.getState().reAuthAndResume('newpassword')
@@ -748,13 +770,17 @@ describe('reAuthAndResume action (AUTH-03)', () => {
       sessionId: 'old-session',
       ratings: { g0: 700, g1: 900 },
       dirtyGameIds: ['g1'], // g0 already clean; only g1 should be called
+      games: {
+        g0: { id: 'g0', collId: 'coll-g0', name: 'G0', yearPublished: 2020, thumbnail: '' },
+        g1: { id: 'g1', collId: 'coll-g1', name: 'G1', yearPublished: 2020, thumbnail: '' },
+      },
     } as Parameters<typeof store.setState>[0])
 
     await store.getState().reAuthAndResume('newpassword')
 
-    const calledWith = vi.mocked(mockBggRateGame).mock.calls.map(c => c[0])
-    expect(calledWith).not.toContain('g0')
-    expect(calledWith).toContain('g1')
+    const calledCollIds = vi.mocked(mockBggRateGame).mock.calls.map(c => c[0])
+    expect(calledCollIds).not.toContain('coll-g0')
+    expect(calledCollIds).toContain('coll-g1')
   })
 })
 
@@ -923,9 +949,12 @@ describe('pick() upset detection (D-01, D-02, D-03)', () => {
 // login() auto-resume (D-07)
 // ---------------------------------------------------------------------------
 
-describe('login() auto-resume (D-07)', () => {
-  it('skips fetchCollection and goes to comparison view when stored rankings belong to same user (D-07)', async () => {
+describe('login() always fetches from BGG', () => {
+  it('always calls fetchCollection regardless of stored rankings — BGG is authoritative', async () => {
     vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'sess123' })
+    vi.mocked(mockBggFetch).mockResolvedValueOnce([
+      { id: 'g0', collId: 'c0', name: 'Game 0', yearPublished: 2020, thumbnail: '', userRating: 7 },
+    ])
 
     const store = createAppStore(createMockStorage())
     store.setState({
@@ -936,47 +965,39 @@ describe('login() auto-resume (D-07)', () => {
 
     await store.getState().login('alice', 'pw')
 
-    // fetchCollection should NOT have been called
-    expect(vi.mocked(mockBggFetch)).not.toHaveBeenCalled()
-
-    // Should be in comparison view (auto-resumed)
+    expect(vi.mocked(mockBggFetch)).toHaveBeenCalledWith('alice', 'sess123')
     expect(store.getState().view).toBe('comparison')
-    expect((store.getState() as Record<string, unknown>).sessionId).toBe('sess123')
   })
 
-  it('calls fetchCollection when stored rankings belong to a different user (D-07)', async () => {
+  it('rebuilds rankings from BGG even when same user returns with stored data', async () => {
     vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'sess123' })
     vi.mocked(mockBggFetch).mockResolvedValueOnce([
-      { id: 'g0', name: 'Game 0', yearPublished: 2020, thumbnail: '', userRating: null },
+      { id: 'new0', collId: 'c0', name: 'Game 0', yearPublished: 2020, thumbnail: '', userRating: 8 },
+      { id: 'new1', collId: 'c1', name: 'Game 1', yearPublished: 2021, thumbnail: '', userRating: 6 },
     ])
 
     const store = createAppStore(createMockStorage())
-    store.setState({
-      rankingsUsername: 'bob',
-      ratings: makeRatings(3),
-      games: makeGames(3),
-    })
+    store.setState({ rankingsUsername: 'alice', ratings: { old: 500 }, games: makeGames(1) })
 
     await store.getState().login('alice', 'pw')
 
-    expect(vi.mocked(mockBggFetch)).toHaveBeenCalled()
+    // Old stale game is gone; new collection from BGG is in place
+    expect('old' in store.getState().ratings).toBe(false)
+    expect(Object.keys(store.getState().ratings).length).toBe(2)
   })
 
-  it('calls fetchCollection when same user but no ratings exist (D-07)', async () => {
+  it('places N/A-rated games (userRating null) into unplayedIds, not ratings', async () => {
     vi.mocked(mockBggLogin).mockResolvedValueOnce({ sessionId: 'sess123' })
     vi.mocked(mockBggFetch).mockResolvedValueOnce([
-      { id: 'g0', name: 'Game 0', yearPublished: 2020, thumbnail: '', userRating: null },
+      { id: 'r0', collId: 'c0', name: 'Rated',   yearPublished: 2020, thumbnail: '', userRating: 7 },
+      { id: 'u0', collId: 'c1', name: 'Unrated', yearPublished: 2021, thumbnail: '', userRating: null },
     ])
 
     const store = createAppStore(createMockStorage())
-    store.setState({
-      rankingsUsername: 'alice',
-      ratings: {},
-      games: makeGames(3),
-    })
-
     await store.getState().login('alice', 'pw')
 
-    expect(vi.mocked(mockBggFetch)).toHaveBeenCalled()
+    expect('r0' in store.getState().ratings).toBe(true)
+    expect('u0' in store.getState().ratings).toBe(false)
+    expect(store.getState().unplayedIds).toContain('u0')
   })
 })

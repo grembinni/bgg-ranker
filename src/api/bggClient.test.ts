@@ -57,6 +57,7 @@ describe('parseCollectionXml (COLL-01)', () => {
     expect(result.length).toBe(2)
     expect(result[0]).toEqual({
       id: '174430',
+      collId: '123',
       name: 'Gloomhaven',
       yearPublished: 2017,
       thumbnail: '//cf.geekdo-images.com/.../pic2437871_t.jpg',
@@ -95,16 +96,16 @@ describe('parseCollectionXml (COLL-01)', () => {
 
 describe('mergeCollections (COLL-03)', () => {
   it('owned entry wins when same objectid appears in both arrays (COLL-03)', () => {
-    const owned: RawGame[] = [{ id: '100', name: 'Owned Name', yearPublished: 2020, thumbnail: 'owned.jpg', userRating: null }]
-    const ratedUnowned: RawGame[] = [{ id: '100', name: 'Rated Name', yearPublished: 2020, thumbnail: 'rated.jpg', userRating: null }]
+    const owned: RawGame[] = [{ id: '100', collId: 'c1', name: 'Owned Name', yearPublished: 2020, thumbnail: 'owned.jpg', userRating: null }]
+    const ratedUnowned: RawGame[] = [{ id: '100', collId: 'c2', name: 'Rated Name', yearPublished: 2020, thumbnail: 'rated.jpg', userRating: null }]
     const merged = mergeCollections(owned, ratedUnowned)
     expect(merged.length).toBe(1)
     expect(merged[0].name).toBe('Owned Name')
   })
 
   it('non-duplicate rated-unowned games are appended to owned (COLL-03)', () => {
-    const owned: RawGame[] = [{ id: '1', name: 'Game One', yearPublished: 2020, thumbnail: '', userRating: null }]
-    const ratedUnowned: RawGame[] = [{ id: '2', name: 'Game Two', yearPublished: 2021, thumbnail: '', userRating: null }]
+    const owned: RawGame[] = [{ id: '1', collId: 'c1', name: 'Game One', yearPublished: 2020, thumbnail: '', userRating: null }]
+    const ratedUnowned: RawGame[] = [{ id: '2', collId: 'c2', name: 'Game Two', yearPublished: 2021, thumbnail: '', userRating: null }]
     const merged = mergeCollections(owned, ratedUnowned)
     expect(merged.length).toBe(2)
     expect(merged.map((g) => g.id)).toEqual(['1', '2'])
@@ -112,8 +113,8 @@ describe('mergeCollections (COLL-03)', () => {
 
   it('logs debug note via console.debug when duplicate found (COLL-03)', () => {
     const spy = vi.spyOn(console, 'debug').mockImplementation(() => {})
-    const owned: RawGame[] = [{ id: '100', name: 'Owned Name', yearPublished: 2020, thumbnail: '', userRating: null }]
-    const ratedUnowned: RawGame[] = [{ id: '100', name: 'Rated Name', yearPublished: 2020, thumbnail: '', userRating: null }]
+    const owned: RawGame[] = [{ id: '100', collId: 'c1', name: 'Owned Name', yearPublished: 2020, thumbnail: '', userRating: null }]
+    const ratedUnowned: RawGame[] = [{ id: '100', collId: 'c2', name: 'Rated Name', yearPublished: 2020, thumbnail: '', userRating: null }]
     mergeCollections(owned, ratedUnowned)
     expect(spy).toHaveBeenCalledWith(expect.stringContaining('Duplicate'))
     expect(spy).toHaveBeenCalledWith(expect.stringContaining('100'))
@@ -345,58 +346,59 @@ describe('bggRateGame (SYNC-01)', () => {
     vi.useRealTimers()
   })
 
-  it('calls fetch with POST to BGG_API_BASE + "/api/geekrating" (SYNC-01)', async () => {
+  it('calls fetch with PUT to BGG_API_BASE + "/api/collectionitem/{collId}" (SYNC-01)', async () => {
     const mockFetch = vi.mocked(fetch)
     mockFetch.mockResolvedValueOnce({ status: 200, ok: true } as Response)
 
-    await bggRateGame('174430', 743, 'session-abc')
+    await bggRateGame('52413845', '174430', 743, 'session-abc')
 
     expect(mockFetch).toHaveBeenCalledTimes(1)
     const calledUrl = mockFetch.mock.calls[0][0] as string
-    expect(calledUrl).toContain('/api/geekrating')
+    expect(calledUrl).toContain('/api/collectionitem/52413845')
+    const init = mockFetch.mock.calls[0][1] as RequestInit
+    expect(init.method).toBe('PUT')
   })
 
   it('sends X-BGG-Session header equal to the sessionId argument (SYNC-01)', async () => {
     const mockFetch = vi.mocked(fetch)
     mockFetch.mockResolvedValueOnce({ status: 200, ok: true } as Response)
 
-    await bggRateGame('174430', 743, 'my-session-id')
+    await bggRateGame('52413845', '174430', 743, 'my-session-id')
 
     const init = mockFetch.mock.calls[0][1] as RequestInit
     const headers = init.headers as Record<string, string>
     expect(headers['X-BGG-Session']).toBe('my-session-id')
   })
 
-  it('sends ratingInt/100 as the rating field — ratingInt=743 sends rating="7.43" (SYNC-01, D-10)', async () => {
+  it('sends ratingInt/100 as JSON item.rating — ratingInt=743 sends 7.43 (SYNC-01, D-10)', async () => {
     const mockFetch = vi.mocked(fetch)
     mockFetch.mockResolvedValueOnce({ status: 200, ok: true } as Response)
 
-    await bggRateGame('174430', 743, 'session-abc')
+    await bggRateGame('52413845', '174430', 743, 'session-abc')
 
     const init = mockFetch.mock.calls[0][1] as RequestInit
-    const bodyStr = init.body as string
-    const params = new URLSearchParams(bodyStr)
-    expect(params.get('rating')).toBe('7.43')
+    const body = JSON.parse(init.body as string)
+    expect(body.item.rating).toBe(7.43)
   })
 
-  it('sends objectid=gameId and objecttype=thing as form fields (SYNC-01)', async () => {
+  it('sends collid, objectid, and objecttype=thing in JSON body (SYNC-01)', async () => {
     const mockFetch = vi.mocked(fetch)
     mockFetch.mockResolvedValueOnce({ status: 200, ok: true } as Response)
 
-    await bggRateGame('174430', 743, 'session-abc')
+    await bggRateGame('52413845', '174430', 743, 'session-abc')
 
     const init = mockFetch.mock.calls[0][1] as RequestInit
-    const bodyStr = init.body as string
-    const params = new URLSearchParams(bodyStr)
-    expect(params.get('objectid')).toBe('174430')
-    expect(params.get('objecttype')).toBe('thing')
+    const body = JSON.parse(init.body as string)
+    expect(body.item.collid).toBe('52413845')
+    expect(body.item.objectid).toBe('174430')
+    expect(body.item.objecttype).toBe('thing')
   })
 
   it('resolves (void) on 200 OK (SYNC-01)', async () => {
     const mockFetch = vi.mocked(fetch)
     mockFetch.mockResolvedValueOnce({ status: 200, ok: true } as Response)
 
-    const result = await bggRateGame('174430', 743, 'session-abc')
+    const result = await bggRateGame('52413845', '174430', 743, 'session-abc')
     expect(result).toBeUndefined()
   })
 
@@ -404,13 +406,13 @@ describe('bggRateGame (SYNC-01)', () => {
     const mockFetch = vi.mocked(fetch)
     mockFetch.mockResolvedValueOnce({ status: 401, ok: false, text: () => Promise.resolve('') } as unknown as Response)
 
-    await expect(bggRateGame('174430', 743, 'session-abc')).rejects.toMatchObject({ status: 401 })
+    await expect(bggRateGame('52413845', '174430', 743, 'session-abc')).rejects.toMatchObject({ status: 401 })
   })
 
   it('throws with .status===500 when fetch returns 500 (SYNC-01)', async () => {
     const mockFetch = vi.mocked(fetch)
     mockFetch.mockResolvedValueOnce({ status: 500, ok: false, text: () => Promise.resolve('') } as unknown as Response)
 
-    await expect(bggRateGame('174430', 743, 'session-abc')).rejects.toMatchObject({ status: 500 })
+    await expect(bggRateGame('52413845', '174430', 743, 'session-abc')).rejects.toMatchObject({ status: 500 })
   })
 })

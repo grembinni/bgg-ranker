@@ -21,6 +21,9 @@ export default function GameCard({ gameId, onPick, onMarkUnplayed }: GameCardPro
 
   return (
     <div className="relative bg-white border border-gray-200 rounded-lg p-4 flex flex-col gap-2">
+      <div className="absolute top-2 left-2 bg-gray-800/70 text-white text-xs font-bold px-1.5 py-0.5 rounded z-10">
+        #{rank}
+      </div>
       <button
         type="button"
         onClick={onMarkUnplayed}
@@ -42,9 +45,9 @@ export default function GameCard({ gameId, onPick, onMarkUnplayed }: GameCardPro
           No image
         </div>
       )}
-      <div className="text-xl font-semibold text-gray-900 leading-tight">{game.name}</div>
-      <div className="text-sm text-gray-500">({game.yearPublished})</div>
-      <div className="text-sm text-gray-500">#{rank}</div>
+      <div className="text-xl font-semibold text-gray-900 leading-tight">
+        {game.name} <span className="text-sm font-normal text-gray-500">({game.yearPublished})</span>
+      </div>
       <button
         type="button"
         onClick={onPick}

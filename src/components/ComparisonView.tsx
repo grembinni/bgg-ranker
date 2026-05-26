@@ -20,7 +20,8 @@ export default function ComparisonView() {
   const lastUpset = useStore(s => s.lastUpset)
   const logout = useStore(s => s.logout)
 
-  const syncDisabled = !sessionId || dirtyGameIds.length === 0
+  const syncCount = dirtyGameIds.length
+  const syncDisabled = !sessionId || syncCount === 0
 
   const [menuOpen, setMenuOpen] = useState(false)
   const handleSync = () => { setMenuOpen(false); startSync() }
@@ -57,7 +58,7 @@ export default function ComparisonView() {
                 disabled={syncDisabled}
                 className="px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sync to BGG
+                Sync to BGG ({syncCount})
               </button>
               <button
                 type="button"

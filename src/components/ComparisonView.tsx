@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useStore } from '../store/store'
 import GameCard from './GameCard'
 
@@ -25,6 +25,9 @@ export default function ComparisonView() {
   const syncDisabled = !sessionId || syncCount === 0
 
   const [menuOpen, setMenuOpen] = useState(false)
+  const menuCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleMenuEnter = () => { if (menuCloseTimer.current) { clearTimeout(menuCloseTimer.current); menuCloseTimer.current = null } }
+  const handleMenuLeave = () => { menuCloseTimer.current = setTimeout(() => setMenuOpen(false), 150) }
   const handleSync = () => { setMenuOpen(false); startSync() }
   const handleRefresh = () => { setMenuOpen(false); refresh() }
   const handleLogout = () => { setMenuOpen(false); logout() }
@@ -42,7 +45,7 @@ export default function ComparisonView() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <header className="flex justify-between items-center mb-8 text-base text-gray-700">
-        <div className="relative" onMouseLeave={() => setMenuOpen(false)}>
+        <div className="relative" onMouseEnter={handleMenuEnter} onMouseLeave={handleMenuLeave}>
           <button
             type="button"
             onClick={() => setMenuOpen(o => !o)}

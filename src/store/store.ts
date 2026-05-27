@@ -89,7 +89,8 @@ export type AppStore = SessionStateSlice &
   AppActions
 
 // Exported for unit testing.
-// Rules: tiers 9+10 excluded; tier-1 vs tier-1 disallowed; pairs within 50 rank positions; ±1 tier.
+// Rules: top 20 by rank excluded (rank 1-10 = "tier 10", 11-20 = "tier 9");
+//        tier-1-by-rating vs tier-1 disallowed; pairs within 50 rank positions; ±1 tier.
 // Falls back to any two eligible games when no rule-compliant pair is found.
 export function selectRandomPair(
   ratings: Record<string, number>,
@@ -99,14 +100,14 @@ export function selectRandomPair(
     return skipQueue[0]
   }
 
-  // Sort descending to get rank positions (index 0 = best)
+  // Sort descending to get rank positions (index 0 = best = rank 1)
   const sorted = Object.entries(ratings).sort((a, b) => b[1] - a[1])
   if (sorted.length < 2) return null
 
   const rankOf = new Map(sorted.map(([id], i) => [id, i]))
 
-  // Eligible pool: exclude tier 9 and 10 (rating > 800)
-  const eligible = sorted.filter(([, r]) => r <= 800)
+  // Eligible pool: exclude top 20 by rank (tier 10 = ranks 1-10, tier 9 = ranks 11-20)
+  const eligible = sorted.slice(20)
 
   // If too few eligible games, fall back to any two games from the full set
   if (eligible.length < 2) {

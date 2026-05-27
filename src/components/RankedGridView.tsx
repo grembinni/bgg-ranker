@@ -73,7 +73,7 @@ export default function RankedGridView() {
   const orderedIds = localOrder ?? sortedFromStore
 
   const safeOffset = Math.min(pageOffset, Math.max(0, orderedIds.length - 1))
-  const pageSlice = orderedIds.slice(safeOffset, safeOffset + 150)
+  const pageSlice = orderedIds.slice(safeOffset, safeOffset + 200)
 
   const sensors = useSensors(useSensor(PointerSensor))
 
@@ -108,7 +108,7 @@ export default function RankedGridView() {
     preloadImages(visible)
 
     const incoming = orderedIds
-      .slice(safeOffset + 50, safeOffset + 200)
+      .slice(safeOffset + 200, safeOffset + 400)
       .map(id => games[id]?.thumbnail)
       .filter((t): t is string => Boolean(t))
     preloadImages(incoming)
@@ -131,24 +131,42 @@ export default function RankedGridView() {
       <div className="flex items-center justify-between mb-3">
         <button
           type="button"
-          onClick={() => setPageOffset(Math.max(0, safeOffset - 50))}
+          onClick={() => setPageOffset(Math.max(0, safeOffset - 100))}
           disabled={safeOffset === 0}
           className="px-3 py-1.5 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed outline-2 outline-offset-2 outline-blue-600"
         >
-          ← Prev 50
+          ← Prev 100
         </button>
         <span className="text-sm text-gray-600">
-          Rankings {safeOffset + 1}–{Math.min(safeOffset + 150, orderedIds.length)} of {orderedIds.length}
+          Rankings {safeOffset + 1}–{Math.min(safeOffset + 200, orderedIds.length)} of {orderedIds.length}
         </span>
         <button
           type="button"
-          onClick={() => setPageOffset(Math.min(safeOffset + 50, Math.max(0, orderedIds.length - 1)))}
-          disabled={safeOffset + 150 >= orderedIds.length}
+          onClick={() => setPageOffset(Math.min(safeOffset + 100, Math.max(0, orderedIds.length - 1)))}
+          disabled={safeOffset + 200 >= orderedIds.length}
           className="px-3 py-1.5 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed outline-2 outline-offset-2 outline-blue-600"
         >
-          Next 50 →
+          Next 100 →
         </button>
       </div>
+
+      {/* Side click zones — click left/right of grid to paginate */}
+      {safeOffset > 0 && (
+        <div
+          className="fixed left-0 top-0 bottom-0 w-16 cursor-pointer z-10 flex items-center justify-center group"
+          onClick={() => setPageOffset(Math.max(0, safeOffset - 100))}
+        >
+          <span className="text-3xl text-gray-300 group-hover:text-gray-500 select-none">‹</span>
+        </div>
+      )}
+      {safeOffset + 200 < orderedIds.length && (
+        <div
+          className="fixed right-0 top-0 bottom-0 w-16 cursor-pointer z-10 flex items-center justify-center group"
+          onClick={() => setPageOffset(Math.min(safeOffset + 100, Math.max(0, orderedIds.length - 1)))}
+        >
+          <span className="text-3xl text-gray-300 group-hover:text-gray-500 select-none">›</span>
+        </div>
+      )}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={pageSlice} strategy={rectSortingStrategy}>

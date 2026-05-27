@@ -331,7 +331,8 @@ describe('pick action (RANK-03, RANK-05, PERSIST-01)', () => {
     expect(store.getState().comparisonsTotal).toBe(102)
   })
 
-  it('selects next pair from skipQueue front when queue is non-empty (RANK-04)', () => {
+  it('drains skipQueue by one and selects randomly after pick (RANK-04)', () => {
+    // skipQueue had ['g2','g3']; after pick it should be empty and next pair should NOT be ['g2','g3']
     const store = setupStoreWithGames(makeGames(4), makeRatings(4))
     store.setState({
       currentPair: ['g0', 'g1'],
@@ -340,8 +341,9 @@ describe('pick action (RANK-03, RANK-05, PERSIST-01)', () => {
 
     store.getState().pick('g0', 'g1')
 
-    expect(store.getState().currentPair).toEqual(['g2', 'g3'])
     expect(store.getState().skipQueue.length).toBe(0)
+    // skipped pair must NOT immediately come back as the very next pair
+    expect(store.getState().currentPair).not.toEqual(['g2', 'g3'])
   })
 
   it('selects next pair from random pool when skipQueue is empty (RANK-02)', () => {

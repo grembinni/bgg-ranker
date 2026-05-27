@@ -328,7 +328,7 @@ export function createAppStore(rawStorage: StateStorage) {
 
           const newRatings = applyUpset(winnerId, loserId, ratings)
           const newQueue = skipQueue.length > 0 ? skipQueue.slice(1) : skipQueue
-          const nextPair = selectRandomPair(newRatings, skipQueue)
+          const nextPair = selectRandomPair(newRatings, newQueue)
           const changed = Object.keys(newRatings).filter(id => newRatings[id] !== ratings[id])
           const newDirty = [...new Set([...dirtyGameIds, ...changed])]
 

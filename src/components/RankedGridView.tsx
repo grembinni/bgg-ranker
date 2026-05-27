@@ -153,18 +153,18 @@ export default function RankedGridView() {
       {/* Side click zones — click left/right of grid to paginate */}
       {safeOffset > 0 && (
         <div
-          className="fixed left-0 top-0 bottom-0 w-16 cursor-pointer z-10 flex items-center justify-center group"
+          className="fixed left-0 top-0 bottom-0 w-24 cursor-pointer z-10 flex items-center justify-center group"
           onClick={() => setPageOffset(Math.max(0, safeOffset - 100))}
         >
-          <span className="text-3xl text-gray-300 group-hover:text-gray-500 select-none">‹</span>
+          <span className="text-5xl text-gray-300 group-hover:text-gray-500 select-none">‹</span>
         </div>
       )}
       {safeOffset + 200 < orderedIds.length && (
         <div
-          className="fixed right-0 top-0 bottom-0 w-16 cursor-pointer z-10 flex items-center justify-center group"
+          className="fixed right-0 top-0 bottom-0 w-24 cursor-pointer z-10 flex items-center justify-center group"
           onClick={() => setPageOffset(Math.min(safeOffset + 100, Math.max(0, orderedIds.length - 1)))}
         >
-          <span className="text-3xl text-gray-300 group-hover:text-gray-500 select-none">›</span>
+          <span className="text-5xl text-gray-300 group-hover:text-gray-500 select-none">›</span>
         </div>
       )}
 

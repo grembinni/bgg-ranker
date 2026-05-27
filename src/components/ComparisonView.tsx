@@ -42,7 +42,7 @@ export default function ComparisonView() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <header className="flex justify-between items-center mb-8 text-base text-gray-700">
-        <div className="relative">
+        <div className="relative" onMouseLeave={() => setMenuOpen(false)}>
           <button
             type="button"
             onClick={() => setMenuOpen(o => !o)}

@@ -89,8 +89,7 @@ export type AppStore = SessionStateSlice &
   AppActions
 
 // Exported for unit testing.
-// Rules: top 20 by rank excluded (rank 1-10 = "tier 10", 11-20 = "tier 9");
-//        tier-1-by-rating vs tier-1 disallowed; pairs within 50 rank positions; ±1 tier.
+// Rules: exclude ratings >= 850 or <= 150; pairs within 50 rank positions; ±1 tier.
 // Falls back to any two eligible games when no rule-compliant pair is found.
 export function selectRandomPair(
   ratings: Record<string, number>,
@@ -106,8 +105,8 @@ export function selectRandomPair(
 
   const rankOf = new Map(sorted.map(([id], i) => [id, i]))
 
-  // Eligible pool: exclude top 20 by rank (tier 10 = ranks 1-10, tier 9 = ranks 11-20)
-  const eligible = sorted.slice(20)
+  // Eligible pool: exclude extremes (rating >= 850 or <= 150)
+  const eligible = sorted.filter(([, r]) => r > 150 && r < 850)
 
   // If too few eligible games, fall back to any two games from the full set
   if (eligible.length < 2) {
@@ -126,10 +125,8 @@ export function selectRandomPair(
 
     const partners = eligible.filter(([id, r]) => {
       if (id === anchorId) return false
-      const t = Math.ceil(r / 100)
-      if (Math.abs(t - anchorTier) > 1) return false          // ±1 tier
-      if (anchorTier === 1 && t === 1) return false            // no tier-1 vs tier-1
-      if (Math.abs((rankOf.get(id) ?? 0) - anchorRank) > 50) return false  // within 50 ranks
+      if (Math.abs(Math.ceil(r / 100) - anchorTier) > 1) return false       // ±1 tier
+      if (Math.abs((rankOf.get(id) ?? 0) - anchorRank) > 50) return false   // within 50 ranks
       return true
     })
 
@@ -139,22 +136,11 @@ export function selectRandomPair(
     }
   }
 
-  // Fallback: relax rank + tier-adjacency but keep tier-1 rule
+  // Fallback: any two eligible games (rank + tier constraints relaxed)
   const ai = Math.floor(Math.random() * eligible.length)
-  const [aId, aRating] = eligible[ai]
-  const aTier = Math.ceil(aRating / 100)
-  const rest = eligible.filter(([id, r]) => {
-    if (id === aId) return false
-    if (aTier === 1 && Math.ceil(r / 100) === 1) return false
-    return true
-  })
-  if (rest.length > 0) {
-    const [bId] = rest[Math.floor(Math.random() * rest.length)]
-    return [aId, bId]
-  }
-  // Last resort: any two eligible (tier-1 rule cannot be satisfied)
-  const any = eligible.filter(([id]) => id !== aId)
-  const [bId] = any[Math.floor(Math.random() * any.length)]
+  const [aId] = eligible[ai]
+  const rest = eligible.filter(([id]) => id !== aId)
+  const [bId] = rest[Math.floor(Math.random() * rest.length)]
   return [aId, bId]
 }
 

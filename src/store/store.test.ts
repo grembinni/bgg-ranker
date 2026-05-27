@@ -251,45 +251,28 @@ describe('selectRandomPair (RANK-02)', () => {
     expect(pair).toEqual(['g0', 'g1'])
   })
 
-  it('excludes top 20 games by rank from eligible pool', () => {
-    // 25 games ranked g0 (best) → g24 (worst); only g20–g24 (rank 21-25) are eligible
-    const ratings: Record<string, number> = {}
-    for (let i = 0; i < 25; i++) ratings[`g${i}`] = 700 - i * 10
+  it('excludes games with rating >= 850 or <= 150 from eligible pool', () => {
+    // g0=900 (excluded high), g1=151 (eligible), g2=849 (eligible), g3=150 (excluded low)
+    const ratings = { g0: 900, g1: 500, g2: 400, g3: 100 }
     for (let k = 0; k < 50; k++) {
       const pair = selectRandomPair(ratings, [])!
-      const sorted = Object.entries(ratings).sort((a, b) => b[1] - a[1])
-      const rankA = sorted.findIndex(([id]) => id === pair[0])
-      const rankB = sorted.findIndex(([id]) => id === pair[1])
-      expect(rankA).toBeGreaterThanOrEqual(20)
-      expect(rankB).toBeGreaterThanOrEqual(20)
+      expect(pair).not.toContain('g0')
+      expect(pair).not.toContain('g3')
     }
   })
 
-  it('falls back to full set when fewer than 2 eligible games exist (collection ≤ 21)', () => {
-    // Only 3 games total — all top-20, so eligible is empty; must still return a pair
-    const ratings = { g0: 700, g1: 600, g2: 500 }
+  it('falls back to full set when fewer than 2 games are eligible', () => {
+    // All games outside eligible range — must still return a pair
+    const ratings = { g0: 900, g1: 850, g2: 150 }
     const pair = selectRandomPair(ratings, [])
     expect(pair).not.toBeNull()
     expect(pair![0]).not.toBe(pair![1])
   })
 
-  it('never pairs two tier-1-rated games together', () => {
-    // 25 games where the bottom two (rank 23 and 24) both have rating 100 (tier 1)
-    const ratings: Record<string, number> = {}
-    for (let i = 0; i < 23; i++) ratings[`g${i}`] = 700 - i * 20
-    ratings['g23'] = 100
-    ratings['g24'] = 100
-    for (let k = 0; k < 50; k++) {
-      const pair = selectRandomPair(ratings, [])!
-      expect(pair[0] === 'g23' && pair[1] === 'g24').toBe(false)
-      expect(pair[0] === 'g24' && pair[1] === 'g23').toBe(false)
-    }
-  })
-
   it('only pairs games within 50 rank positions', () => {
-    // 80 games ranked g0-g79; eligible starts at rank 20 (g20-g79)
+    // 80 games in eligible range (200–840); all pairs must be within 50 ranks
     const ratings: Record<string, number> = {}
-    for (let i = 0; i < 80; i++) ratings[`g${i}`] = 800 - i * 5
+    for (let i = 0; i < 80; i++) ratings[`g${i}`] = 840 - i * 8  // 840 down to 216
     for (let k = 0; k < 50; k++) {
       const pair = selectRandomPair(ratings, [])!
       const sorted = Object.entries(ratings).sort((a, b) => b[1] - a[1])
@@ -300,10 +283,9 @@ describe('selectRandomPair (RANK-02)', () => {
   })
 
   it('pairs within ±1 tier when a valid partner exists', () => {
-    // 30 games: top 20 excluded, eligible g20-g29 all in tiers 4-7 and within 50 ranks of each other
+    // 10 games in tiers 4-7 (ratings 310-700), all eligible and within 50 ranks
     const ratings: Record<string, number> = {}
-    for (let i = 0; i < 20; i++) ratings[`g${i}`] = 900 - i * 5  // top 20 excluded
-    for (let i = 20; i < 30; i++) ratings[`g${i}`] = 700 - (i - 20) * 40  // tiers 4-7
+    for (let i = 0; i < 10; i++) ratings[`g${i}`] = 700 - i * 40  // 700 down to 340
     for (let k = 0; k < 30; k++) {
       const pair = selectRandomPair(ratings, [])!
       const tierA = Math.ceil(ratings[pair[0]] / 100)

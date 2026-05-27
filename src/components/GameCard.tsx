@@ -6,24 +6,13 @@ interface GameCardProps {
   onMarkUnplayed: () => void
 }
 
-function getRankPosition(gameId: string, ratings: Record<string, number>): number {
-  const sorted = Object.entries(ratings).sort((a, b) => b[1] - a[1])
-  return sorted.findIndex(([id]) => id === gameId) + 1
-}
-
 export default function GameCard({ gameId, onPick, onMarkUnplayed }: GameCardProps) {
   const game = useStore(s => s.games[gameId])
-  const ratings = useStore(s => s.ratings)
 
   if (game === undefined) return null
 
-  const rank = getRankPosition(gameId, ratings)
-
   return (
     <div className="relative bg-white border border-gray-200 rounded-lg p-4 flex flex-col gap-2">
-      <div className="absolute top-2 left-2 bg-gray-800/70 text-white text-xs font-bold px-1.5 py-0.5 rounded z-10">
-        #{rank}
-      </div>
       <button
         type="button"
         onClick={onMarkUnplayed}

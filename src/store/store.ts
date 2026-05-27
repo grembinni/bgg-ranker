@@ -88,8 +88,9 @@ export type AppStore = SessionStateSlice &
   ComparisonStateSlice &
   AppActions
 
-// Exported for unit testing. Picks tier-adjacent pairs (±1 tier); falls back to any partner
-// when no adjacent candidate exists. Drains skipQueue front when non-empty.
+// Exported for unit testing.
+// Rules: tiers 9+10 excluded; tier-1 vs tier-1 disallowed; pairs within 50 rank positions; ±1 tier.
+// Falls back to any two eligible games when no rule-compliant pair is found.
 export function selectRandomPair(
   ratings: Record<string, number>,
   skipQueue: Array<[string, string]>
@@ -98,20 +99,62 @@ export function selectRandomPair(
     return skipQueue[0]
   }
 
-  const ids = Object.keys(ratings)
-  if (ids.length < 2) return null
+  // Sort descending to get rank positions (index 0 = best)
+  const sorted = Object.entries(ratings).sort((a, b) => b[1] - a[1])
+  if (sorted.length < 2) return null
 
-  const anchorIdx = Math.floor(Math.random() * ids.length)
-  const anchorId = ids[anchorIdx]
-  const anchorTier = Math.ceil(ratings[anchorId] / 100)
+  const rankOf = new Map(sorted.map(([id], i) => [id, i]))
 
-  const adjacent = ids.filter(id => {
-    if (id === anchorId) return false
-    return Math.abs(Math.ceil(ratings[id] / 100) - anchorTier) <= 1
+  // Eligible pool: exclude tier 9 and 10 (rating > 800)
+  const eligible = sorted.filter(([, r]) => r <= 800)
+
+  // If too few eligible games, fall back to any two games from the full set
+  if (eligible.length < 2) {
+    const ai = Math.floor(Math.random() * sorted.length)
+    const [aId] = sorted[ai]
+    const rest = sorted.filter(([id]) => id !== aId)
+    const [bId] = rest[Math.floor(Math.random() * rest.length)]
+    return [aId, bId]
+  }
+
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const ai = Math.floor(Math.random() * eligible.length)
+    const [anchorId, anchorRating] = eligible[ai]
+    const anchorTier = Math.ceil(anchorRating / 100)
+    const anchorRank = rankOf.get(anchorId)!
+
+    const partners = eligible.filter(([id, r]) => {
+      if (id === anchorId) return false
+      const t = Math.ceil(r / 100)
+      if (Math.abs(t - anchorTier) > 1) return false          // ±1 tier
+      if (anchorTier === 1 && t === 1) return false            // no tier-1 vs tier-1
+      if (Math.abs((rankOf.get(id) ?? 0) - anchorRank) > 50) return false  // within 50 ranks
+      return true
+    })
+
+    if (partners.length > 0) {
+      const [partnerId] = partners[Math.floor(Math.random() * partners.length)]
+      return [anchorId, partnerId]
+    }
+  }
+
+  // Fallback: relax rank + tier-adjacency but keep tier-1 rule
+  const ai = Math.floor(Math.random() * eligible.length)
+  const [aId, aRating] = eligible[ai]
+  const aTier = Math.ceil(aRating / 100)
+  const rest = eligible.filter(([id, r]) => {
+    if (id === aId) return false
+    if (aTier === 1 && Math.ceil(r / 100) === 1) return false
+    return true
   })
-
-  const pool = adjacent.length > 0 ? adjacent : ids.filter(id => id !== anchorId)
-  return [anchorId, pool[Math.floor(Math.random() * pool.length)]]
+  if (rest.length > 0) {
+    const [bId] = rest[Math.floor(Math.random() * rest.length)]
+    return [aId, bId]
+  }
+  // Last resort: any two eligible (tier-1 rule cannot be satisfied)
+  const any = eligible.filter(([id]) => id !== aId)
+  const [bId] = any[Math.floor(Math.random() * any.length)]
+  return [aId, bId]
 }
 
 function delay(ms: number): Promise<void> {

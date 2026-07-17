@@ -119,6 +119,14 @@ describe('Header hamburger menu', () => {
   })
 })
 
+describe('Header stacking context (CR-02)', () => {
+  it('outer wrapper carries relative z-30 so the header paints above RankedGridView\'s z-10 pagination click-zones', () => {
+    const { container } = render(<Header />)
+    expect(container.firstElementChild?.className).toMatch(/\brelative\b/)
+    expect(container.firstElementChild?.className).toMatch(/\bz-30\b/)
+  })
+})
+
 describe('Header username', () => {
   it('renders username', () => {
     render(<Header />)

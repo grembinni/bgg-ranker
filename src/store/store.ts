@@ -254,7 +254,7 @@ export function createAppStore(rawStorage: StateStorage) {
               ratings,
               rankingsUsername: username,
               lastFetched: Date.now(),
-              view: 'comparison',
+              view: 'ranked-grid',
               currentPair: firstPair,
               sessionComparisons: 0,
               comparisonsTotal: 0,
@@ -290,7 +290,7 @@ export function createAppStore(rawStorage: StateStorage) {
         continueSession(): void {
           const { ratings } = get()
           set({
-            view: 'comparison',
+            view: 'ranked-grid',
             sessionComparisons: 0,
             skipQueue: [],
             currentPair: selectRandomPair(ratings, []),
@@ -536,7 +536,7 @@ export function createAppStore(rawStorage: StateStorage) {
           // Auto-return to comparison view after brief confirmation (~2 seconds)
           completeSyncTimer = setTimeout(() => {
             completeSyncTimer = null
-            set({ view: 'comparison', syncStatus: 'idle' })
+            set({ view: 'ranked-grid', syncStatus: 'idle' })
           }, 2000)
         },
 
@@ -551,7 +551,7 @@ export function createAppStore(rawStorage: StateStorage) {
             // Reset syncStatus so startSync's re-entrancy guard allows the call
             set({ sessionId: result.sessionId, syncStatus: 'idle' })
             if (get().dirtyGameIds.length === 0) {
-              set({ view: 'comparison' })
+              set({ view: 'ranked-grid' })
               return
             }
             await get().startSync()
@@ -566,7 +566,7 @@ export function createAppStore(rawStorage: StateStorage) {
         cancelSync(): void {
           // Setting sessionId=null triggers the per-iteration abort check in startSync
           if (completeSyncTimer) { clearTimeout(completeSyncTimer); completeSyncTimer = null }
-          set({ sessionId: null, view: 'comparison', syncStatus: 'idle' })
+          set({ sessionId: null, view: 'ranked-grid', syncStatus: 'idle' })
         },
 
         logout(): void {

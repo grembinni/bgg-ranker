@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Production Deploy
-status: Phase 04.1.1 planned (4 plans, 3 waves); ready to execute
-stopped_at: Phase 04.1.1 planned — ready to execute
-last_updated: "2026-07-17T15:21:21.661Z"
-last_activity: "2026-05-26 — Phase 4.1 verified: RankedGridView + ComparisonView wiring complete (78bcbf1)"
+status: executing
+stopped_at: Completed 04.1.1-01-PLAN.md
+last_updated: "2026-07-17T15:35:02.446Z"
+last_activity: 2026-07-17 -- Phase 04.1.1 execution started
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 16
-  completed_plans: 16
+  total_plans: 20
+  completed_plans: 17
   percent: 83
 ---
 
@@ -21,13 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26 after v1.0 milestone close)
 
 **Core value:** The user can always tell which of any two games they actually prefer, and the ranking list accurately reflects that — not BGG's community scores, not gut-feel star ratings.
-**Current focus:** v1.1 — Phase 4.1.1 UI Cleanup (inserted, urgent)
+**Current focus:** Phase 04.1.1 — ui-cleanup
 
 ## Current Position
 
-Phase: 04.1.1 (UI Cleanup) — PLANNED (0/4 plans done, ready to execute)
-Status: Phase 4.1 closed; Phase 04.1.1 planned, execution next
-Last activity: 2026-07-17 — Phase 04.1.1 planned: 4 plans in 3 waves (universal header, view cleanup, default-view change, human-verify checkpoint), plan-checker verification passed, all 11 CONTEXT.md decisions covered
+Phase: 04.1.1 (ui-cleanup) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-07-17 -- Phase 04.1.1 execution started
 
 Progress: [██████████] Phase 1 | [██████████] Phase 2 | [██████████] Phase 3 | [██████████] Phase 3.1 | [██████████] Phase 4 | [          ] Phase 5
 
@@ -62,6 +63,8 @@ Most recent decisions:
 - v1.0 close: Phase 5 deferred to v1.1 (app feature-complete; production hosting separate)
 - Phase 4.1 Plan 02: Full-cell drag (no handle) for grid cells; safeOffset clamp prevents off-end pagination; preload incoming 50 (not 100) on page advance
 - Phase 4.1 Plan 03: ComparisonView hamburger prefix on Ranked list (D-01); Grid view button wired to showRankedGrid(); RankedListView unchanged (D-03)
+- [Phase 04.1.1]: Phase 04.1.1 Plan 01: Header wraps itself in max-w-6xl mx-auto px-4 pt-8 rendered from App.tsx (not per-view containers) for byte-identical header markup across all 4 views
+- [Phase 04.1.1]: Phase 04.1.1 Plan 01: Hamburger state/timer pattern extracted verbatim from ComparisonView; new handleUnplayed handler follows same setMenuOpen(false)+action convention
 
 ### Roadmap Evolution
 
@@ -89,9 +92,10 @@ None.
 | Collection | Expansion toggle (COLL-02) | v2 | Phase 2 discuss-phase (2026-05-23) |
 | Quality | Single-step undo (QOL-V2-01) | v2 | Requirements |
 | Infrastructure | Firebase production deploy | v1.1 | v1.0 milestone close (2026-05-26) |
+| Phase 04.1.1 P01 | 9min | 2 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-07-17T15:21:21.661Z
-Stopped at: Phase 04.1.1 planned — ready to execute
+Last session: 2026-07-17T15:35:02.438Z
+Stopped at: Completed 04.1.1-01-PLAN.md
 Resume with: `/gsd-execute-phase 4.1.1` (UI Cleanup)

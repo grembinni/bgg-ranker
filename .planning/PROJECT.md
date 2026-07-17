@@ -10,13 +10,13 @@ The user can always tell which of any two games they actually prefer, and the ra
 
 ## Current State (v1.0 — 2026-05-26)
 
-**Shipped:** Full feature set complete. Cover art, upset callouts, hamburger menu, auto-resume login, and Firebase Function routing all working. App is feature-complete and ready for production deploy.
+**Shipped:** Full feature set complete. Cover art, upset callouts, universal header (single component across all four views), grid-as-default landing, auto-resume login, and Firebase Function routing all working. App is feature-complete and ready for production deploy.
 
 **Remaining for v1.1:**
 - Phase 5: Firebase Cloud Function deploy (production CORS proxy)
 
 **Tech stack locked:** React 19 + Vite 6 + TypeScript + Zustand + TanStack Query + Tailwind 4 + Vitest
-**Test suite:** 169/169 passing
+**Test suite:** 187/187 passing
 
 ## Requirements
 
@@ -81,6 +81,9 @@ BGG XML API2 documentation: https://boardgamegeek.com/wiki/page/BGG_XML_API2
 | Firebase Function: req.path over req.query['path'] | Client uses direct path appending, not ?path= convention — must read URL structure | ✅ Fixed v1.0 |
 | Tier weights [2,6,11,15,18,18,14,9,5,2] | Tuned for better bell-curve distribution after testing | ✅ Validated Phase 4 |
 | Sync throttle 500ms (halved from 1000ms) | Better UX for large collections; BGG rate-limit tolerance confirmed | ✅ Validated Phase 4 |
+| Single universal Header component replaces four per-view headers | Consistent navigation, less duplicated markup, one place to change nav chrome | ✅ Validated Phase 04.1.1 |
+| Grid-as-default landing view (comparison view now opt-in via header) | Users land on an overview of their full collection rather than a single matchup | ✅ Validated Phase 04.1.1 |
+| 3-column CSS grid for header layout (`justify-self-start/center/end`) | True centering of the middle icon cluster regardless of sibling (hamburger/username) width, unlike flex `justify-between` | ✅ Validated Phase 04.1.1 |
 
 ## Evolution
 
@@ -100,4 +103,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-26 after v1.0 milestone close*
+*Last updated: 2026-07-17 after Phase 04.1.1 completion*

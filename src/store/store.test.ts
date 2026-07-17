@@ -81,7 +81,7 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
     })
     expect(new Set(ratingValues).size).toBe(5)
     expect(state.rankingsUsername).toBe('alice')
-    expect(state.view).toBe('comparison')
+    expect(state.view).toBe('ranked-grid')
     expect(state.currentPair).not.toBeNull()
     expect(state.currentPair![0]).not.toBe(state.currentPair![1])
   })
@@ -147,7 +147,7 @@ describe('fetchCollection action (RANK-01, COLL-01, PERSIST-02)', () => {
     await store.getState().fetchCollection('alice')
 
     expect(vi.mocked(mockBggFetch)).toHaveBeenCalledWith('alice', undefined)
-    expect(store.getState().view).toBe('comparison')
+    expect(store.getState().view).toBe('ranked-grid')
   })
 
   it('discards stored rankings and reseeds when entered username differs from rankingsUsername (PERSIST-02)', async () => {
@@ -1035,7 +1035,7 @@ describe('login() auto-resume (D-07)', () => {
     await store.getState().login('alice', 'pw')
 
     expect(vi.mocked(mockBggFetch)).not.toHaveBeenCalled()
-    expect(store.getState().view).toBe('comparison')
+    expect(store.getState().view).toBe('ranked-grid')
   })
 
   it('preserves existing ratings on auto-resume (comparisonsTotal not reset)', async () => {
@@ -1071,7 +1071,7 @@ describe('login() auto-resume (D-07)', () => {
     await store.getState().login('alice', 'pw')
 
     expect(vi.mocked(mockBggFetch)).toHaveBeenCalledWith('alice', 'sess123')
-    expect(store.getState().view).toBe('comparison')
+    expect(store.getState().view).toBe('ranked-grid')
   })
 
   it('places N/A-rated games (userRating null) into unplayedIds, not ratings', async () => {
@@ -1087,5 +1087,37 @@ describe('login() auto-resume (D-07)', () => {
     expect('r0' in store.getState().ratings).toBe(true)
     expect('u0' in store.getState().ratings).toBe(false)
     expect(store.getState().unplayedIds).toContain('u0')
+  })
+})
+
+describe('default landing view is ranked-grid (D-10)', () => {
+  it('fetchCollection() lands on ranked-grid after a successful collection load', async () => {
+    vi.mocked(mockBggFetch).mockResolvedValueOnce([
+      { id: 'g0', collId: 'c0', name: 'A', yearPublished: 2020, thumbnail: '', userRating: 7 },
+      { id: 'g1', collId: 'c1', name: 'B', yearPublished: 2021, thumbnail: '', userRating: 8 },
+    ])
+
+    const store = createAppStore(createMockStorage())
+    await store.getState().fetchCollection('alice')
+
+    expect(store.getState().view).toBe('ranked-grid')
+  })
+
+  it('continueSession() lands on ranked-grid', () => {
+    const store = setupStoreWithGames(makeGames(3), makeRatings(3), 'alice')
+    store.setState({ view: 'comparison' })
+
+    store.getState().continueSession()
+
+    expect(store.getState().view).toBe('ranked-grid')
+  })
+
+  it('cancelSync() lands on ranked-grid', () => {
+    const store = createAppStore(createMockStorage())
+    store.setState({ sessionId: 'active-session', view: 'syncing' } as Parameters<typeof store.setState>[0])
+
+    store.getState().cancelSync()
+
+    expect(store.getState().view).toBe('ranked-grid')
   })
 })

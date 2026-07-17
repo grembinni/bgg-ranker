@@ -1,3 +1,19 @@
+---
+gsd_state_version: 1.0
+milestone: v1.1
+milestone_name: Production Deploy
+status: Phase 4.1 closed; Phase 5 (Firebase Deploy) next
+stopped_at: Phase 04.1.1 context gathered
+last_updated: "2026-07-17T14:54:47.844Z"
+last_activity: "2026-05-26 — Phase 4.1 verified: RankedGridView + ComparisonView wiring complete (78bcbf1)"
+progress:
+  total_phases: 6
+  completed_phases: 5
+  total_plans: 16
+  completed_plans: 16
+  percent: 83
+---
+
 # Project State
 
 ## Project Reference
@@ -5,7 +21,7 @@
 See: .planning/PROJECT.md (updated 2026-05-26 after v1.0 milestone close)
 
 **Core value:** The user can always tell which of any two games they actually prefer, and the ranking list accurately reflects that — not BGG's community scores, not gut-feel star ratings.
-**Current focus:** v1.1 — Phase 5 Firebase Production Deploy
+**Current focus:** v1.1 — Phase 4.1.1 UI Cleanup (inserted, urgent)
 
 ## Current Position
 
@@ -18,12 +34,14 @@ Progress: [██████████] Phase 1 | [████████�
 ## Performance Metrics
 
 **v1.0 Increment (Phase 4):**
+
 - Plans completed: 4
 - Timeline: 2026-05-25 → 2026-05-26 (2 days)
 - Commits: 33 (since v0.9 close)
 - Tests added: 169 total (was 162 at v0.9)
 
 **v1.1 Increment (Phase 4.1):**
+
 - Plans completed: 3
 - Timeline: 2026-05-26 (single day)
 - Tests added: 171 total (was 169 after Phase 4)
@@ -36,6 +54,7 @@ Progress: [██████████] Phase 1 | [████████�
 See PROJECT.md Key Decisions table for full history.
 
 Most recent decisions:
+
 - Phase 4: lastUpset excluded from partialize (session-only; clears on reload)
 - Phase 4: upsetTimer at module scope (not Zustand state — prevents serialize-to-null)
 - Phase 4: PERSIST-02 guard in login(), not fetchCollection()
@@ -47,6 +66,7 @@ Most recent decisions:
 ### Roadmap Evolution
 
 - Phase 4.1 (INSERTED after Phase 4, 2026-05-26): List View Cleanup — hamburger on ranked list, 10×10 thumbnail grid view with drag-and-drop, 50-game pagination, session image cache, dirty-flag validation for unplayed→ranked moves.
+- Phase 4.1.1 (INSERTED after Phase 4.1, 2026-07-17, URGENT): ui cleanup
 
 ### Pending Todos
 
@@ -72,6 +92,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-26
-Stopped at: Phase 4.1 fully closed — VERIFICATION.md written, 6/6 SC met
-Resume with: `/gsd:discuss-phase 5` (Firebase Production Deploy)
+Last session: 2026-07-17T14:54:47.837Z
+Stopped at: Phase 04.1.1 context gathered
+Resume with: `/gsd-plan-phase 4.1.1` (UI Cleanup)

@@ -8,6 +8,7 @@ import SyncingView from './components/SyncingView'
 import RankedListView from './components/RankedListView'
 import UnplayedListView from './components/UnplayedListView'
 import RankedGridView from './components/RankedGridView'
+import Header from './components/Header'
 
 function App() {
   const view = useStore(s => s.view)
@@ -24,8 +25,11 @@ function App() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [dirtyGameIds.length])
 
+  const showHeader = view === 'comparison' || view === 'ranked-list' || view === 'ranked-grid' || view === 'unplayed-list'
+
   return (
     <div className="bg-gray-50 min-h-screen">
+      {showHeader && <Header />}
       {view === 'entry' && <UsernameEntry />}
       {view === 'loading' && <CollectionLoading />}
       {view === 'comparison' && <ComparisonView />}

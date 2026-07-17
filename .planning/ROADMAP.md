@@ -31,11 +31,28 @@
   - [x] 04.1-01-PLAN.md — Store extension: add ranked-grid view state + showRankedGrid() action + tests
   - [x] 04.1-02-PLAN.md — RankedGridView component: 10x10 grid, DnD, pagination, image preloading
   - [x] 04.1-03-PLAN.md — Wiring: App.tsx view router + ComparisonView buttons
+- [ ] Phase 04.1.1: UI Cleanup (INSERTED) — 4 plans
+  - [ ] 04.1.1-01-PLAN.md — Universal Header component (hamburger + counts + vs/list/grid icons + username) + tests + App.tsx wiring (D-01..D-05)
+  - [ ] 04.1.1-02-PLAN.md — Remove per-view headers from all 4 views; ComparisonView cleanup — drop nav row, relocate red full-height Skip beside cards (D-04..D-09)
+  - [ ] 04.1.1-03-PLAN.md — Store: default 5 automatic view transitions to ranked-grid; keep backToComparison → comparison (D-10, D-11)
+  - [ ] 04.1.1-04-PLAN.md — Human-verify checkpoint: header parity, red Skip, grid-as-default landing
+
+**Phase 04.1.1 Goal:** Replace the four per-view headers (ComparisonView, RankedListView, RankedGridView, UnplayedListView) with a single universal header shared across all views, clean up ComparisonView's now-redundant navigation controls, and change the app's default landing view from comparison to grid.
+**Phase 04.1.1 Requirements:** (no formal REQ-IDs — inserted phase, scope defined via discuss-phase CONTEXT.md)
+**Phase 04.1.1 Success Criteria:**
+
+  1. A single universal header component renders identically across all four views (comparison, ranked-list, ranked-grid, unplayed-list) — no per-view header code remains
+  2. Header shows, left to right: hamburger menu (Sync to BGG, Refresh rankings, Unplayed, Logout) · session/total comparison counts · vs/list/grid view-switch icons · username
+  3. Back buttons are removed from RankedListView, RankedGridView, and UnplayedListView — navigation happens entirely through the universal header
+  4. ComparisonView's "Ranked list"/"Grid view"/"Unplayed" buttons are removed; Skip button is repositioned to the right of the two game cards, styled red, full column height
+  5. All automatic `view: 'comparison'` transitions in store.ts (post-login/collection-load, post-sync, post-401-reset) default to `'ranked-grid'` instead; `backToComparison()` remains available via the header's vs icon
+
 - [ ] Phase 5: Firebase Production Deploy (1 plan)
 
 **Phase 4.1 Goal:** The ranked list has two viewing modes — an existing simple text list (hamburger navigation) and a new 10×10 thumbnail grid view with drag-and-drop ranking. Grid shows 100 games at a time, shifts by 50, caches images for the session. Dirty flagging for unplayed→ranked game moves is verified.
 **Phase 4.1 Requirements:** (no formal REQ-IDs yet — will be assigned during discuss-phase)
 **Phase 4.1 Success Criteria:**
+
   1. Ranked List view has a hamburger menu for navigation (consistent with ComparisonView pattern)
   2. A "Grid View" button (grid icon) switches to a 10×10 thumbnail grid showing 100 ranked games
   3. Grid is responsive; "Previous 50" / "Next 50" buttons shift the viewport by 50 games
@@ -46,6 +63,7 @@
 **Phase 5 Goal:** Firebase Cloud Function deployed and production CORS proxy operational — the app runs end-to-end in production with no CORS errors
 
 **Phase 5 Success Criteria:**
+
 1. Firebase CLI authenticated and `firebase deploy --only functions` completes; Function URL live
 2. `.env.production` updated with live Function URL as `VITE_BGG_API_BASE`
 3. `smoke-test-prod.sh` exits 0 with real credentials: collection read, login, write path all succeed
@@ -63,4 +81,5 @@
 | 3.1. Sync Repair | v0.9 | 2/2 | Complete | 2026-05-25 |
 | 4. Display Polish | v1.0 | 4/4 | Complete | 2026-05-26 |
 | 4.1. List View Cleanup (INSERTED) | v1.1 | 3/3 | Verified | 2026-05-26 |
+| 4.1.1. UI Cleanup (INSERTED) | v1.1 | 0/4 | Planned | — |
 | 5. Firebase Deploy | v1.1 | 0/1 | Not started | — |

@@ -2,8 +2,6 @@ import { useState, useRef } from 'react'
 import { useStore } from '../store/store'
 
 export default function Header() {
-  const sessionComparisons = useStore(s => s.sessionComparisons)
-  const comparisonsTotal = useStore(s => s.comparisonsTotal)
   const sessionUsername = useStore(s => s.sessionUsername)
   const dirtyGameIds = useStore(s => s.dirtyGameIds)
   const unplayedIds = useStore(s => s.unplayedIds)
@@ -31,8 +29,8 @@ export default function Header() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 pt-8">
-      <header className="flex justify-between items-center mb-8 text-base text-gray-700">
-        <div className="relative" onMouseEnter={handleMenuEnter} onMouseLeave={handleMenuLeave}>
+      <header className="grid grid-cols-3 items-center mb-8 text-base text-gray-700">
+        <div className="relative justify-self-start" onMouseEnter={handleMenuEnter} onMouseLeave={handleMenuLeave}>
           <button
             type="button"
             onClick={() => setMenuOpen(o => !o)}
@@ -75,8 +73,7 @@ export default function Header() {
             </div>
           )}
         </div>
-        <span>{sessionComparisons} this session · {comparisonsTotal} total</span>
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-self-center">
           <button
             type="button"
             onClick={backToComparison}
@@ -102,7 +99,7 @@ export default function Header() {
             ⊞
           </button>
         </div>
-        <span>{sessionUsername}</span>
+        <span className="justify-self-end">{sessionUsername}</span>
       </header>
     </div>
   )

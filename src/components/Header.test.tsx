@@ -20,8 +20,6 @@ let mockView: string = 'comparison'
 vi.mock('../store/store', () => ({
   useStore: (selector: (s: Record<string, unknown>) => unknown) =>
     selector({
-      sessionComparisons: 3,
-      comparisonsTotal: 5,
       sessionUsername: 'alice',
       sessionId: mockSessionId,
       dirtyGameIds: mockDirtyGameIds,
@@ -121,15 +119,16 @@ describe('Header hamburger menu', () => {
   })
 })
 
-describe('Header session counts and username', () => {
-  it('renders session-count text', () => {
-    render(<Header />)
-    expect(screen.getByText('3 this session · 5 total')).toBeInTheDocument()
-  })
-
+describe('Header username', () => {
   it('renders username', () => {
     render(<Header />)
     expect(screen.getByText('alice')).toBeInTheDocument()
+  })
+
+  it('does not render session-count text', () => {
+    render(<Header />)
+    expect(screen.queryByText(/this session/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/total/i)).not.toBeInTheDocument()
   })
 })
 

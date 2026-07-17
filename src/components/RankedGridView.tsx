@@ -59,7 +59,6 @@ function SortableGridCell({ id, thumbnail }: GridCellProps) {
 export default function RankedGridView() {
   const ratings = useStore(s => s.ratings)
   const games = useStore(s => s.games)
-  const backToComparison = useStore(s => s.backToComparison)
   const reorderRankedList = useStore(s => s.reorderRankedList)
 
   const [localOrder, setLocalOrder] = useState<string[] | null>(null)
@@ -117,17 +116,6 @@ export default function RankedGridView() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <header className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold text-gray-900">Rankings ({orderedIds.length} games)</h1>
-        <button
-          type="button"
-          onClick={backToComparison}
-          className="px-4 py-1.5 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
-        >
-          ← Back
-        </button>
-      </header>
-
       <div className="flex items-center justify-between mb-3">
         <button
           type="button"

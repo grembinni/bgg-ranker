@@ -55,7 +55,6 @@ export default function UnplayedListView() {
   const unplayedIds = useStore(s => s.unplayedIds)
   const ratings = useStore(s => s.ratings)
   const games = useStore(s => s.games)
-  const backToComparison = useStore(s => s.backToComparison)
   const moveUnplayedToRanked = useStore(s => s.moveUnplayedToRanked)
 
   const totalRanked = Object.keys(ratings).length
@@ -70,16 +69,6 @@ export default function UnplayedListView() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <header className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Unplayed ({sorted.length} games)</h1>
-        <button
-          type="button"
-          onClick={backToComparison}
-          className="px-4 py-1.5 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 outline-2 outline-offset-2 outline-blue-600"
-        >
-          ← Back
-        </button>
-      </header>
       {sorted.length === 0 ? (
         <p className="text-sm text-gray-500">No games marked as unplayed yet.</p>
       ) : (

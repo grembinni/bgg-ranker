@@ -31,11 +31,11 @@
   - [x] 04.1-01-PLAN.md — Store extension: add ranked-grid view state + showRankedGrid() action + tests
   - [x] 04.1-02-PLAN.md — RankedGridView component: 10x10 grid, DnD, pagination, image preloading
   - [x] 04.1-03-PLAN.md — Wiring: App.tsx view router + ComparisonView buttons
-- [ ] Phase 04.1.1: UI Cleanup (INSERTED) — 4 plans
+- [x] Phase 04.1.1: UI Cleanup (INSERTED) — 4 plans (completed 2026-07-17)
   - [x] 04.1.1-01-PLAN.md — Universal Header component (hamburger + counts + vs/list/grid icons + username) + tests + App.tsx wiring (D-01..D-05)
   - [x] 04.1.1-02-PLAN.md — Remove per-view headers from all 4 views; ComparisonView cleanup — drop nav row, relocate red full-height Skip beside cards (D-04..D-09)
   - [x] 04.1.1-03-PLAN.md — Store: default 5 automatic view transitions to ranked-grid; keep backToComparison → comparison (D-10, D-11)
-  - [ ] 04.1.1-04-PLAN.md — Human-verify checkpoint: header parity, red Skip, grid-as-default landing
+  - [x] 04.1.1-04-PLAN.md — Human-verify checkpoint: header parity, red Skip, grid-as-default landing
 
 **Phase 04.1.1 Goal:** Replace the four per-view headers (ComparisonView, RankedListView, RankedGridView, UnplayedListView) with a single universal header shared across all views, clean up ComparisonView's now-redundant navigation controls, and change the app's default landing view from comparison to grid.
 **Phase 04.1.1 Requirements:** (no formal REQ-IDs — inserted phase, scope defined via discuss-phase CONTEXT.md)
@@ -81,5 +81,5 @@
 | 3.1. Sync Repair | v0.9 | 2/2 | Complete | 2026-05-25 |
 | 4. Display Polish | v1.0 | 4/4 | Complete | 2026-05-26 |
 | 4.1. List View Cleanup (INSERTED) | v1.1 | 3/3 | Verified | 2026-05-26 |
-| 4.1.1. UI Cleanup (INSERTED) | v1.1 | 3/4 | In Progress|  |
+| 4.1.1. UI Cleanup (INSERTED) | v1.1 | 4/4 | Complete   | 2026-07-17 |
 | 5. Firebase Deploy | v1.1 | 0/1 | Not started | — |

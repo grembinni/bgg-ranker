@@ -28,7 +28,7 @@ export default function Header() {
   const handleLogout = () => { setMenuOpen(false); logout() }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 pt-8">
+    <div className="relative z-30 max-w-6xl mx-auto px-4 pt-8">
       <header className="grid grid-cols-3 items-center mb-8 text-base text-gray-700">
         <div className="relative justify-self-start" onMouseEnter={handleMenuEnter} onMouseLeave={handleMenuLeave}>
           <button

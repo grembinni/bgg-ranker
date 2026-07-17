@@ -42,7 +42,7 @@
 **Phase 04.1.1 Success Criteria:**
 
   1. A single universal header component renders identically across all four views (comparison, ranked-list, ranked-grid, unplayed-list) — no per-view header code remains
-  2. Header shows, left to right: hamburger menu (Sync to BGG, Refresh rankings, Unplayed, Logout) · session/total comparison counts · vs/list/grid view-switch icons · username
+  2. Header shows, left to right: hamburger menu (Sync to BGG, Refresh rankings, Unplayed, Logout) · vs/list/grid view-switch icons (centered) · username. (Revised during Plan 04's human-verify checkpoint: session/total comparison counts were dropped from the header display per reviewer request — see 04.1.1-04-SUMMARY.md.)
   3. Back buttons are removed from RankedListView, RankedGridView, and UnplayedListView — navigation happens entirely through the universal header
   4. ComparisonView's "Ranked list"/"Grid view"/"Unplayed" buttons are removed; Skip button is repositioned to the right of the two game cards, styled red, full column height
   5. All automatic `view: 'comparison'` transitions in store.ts (post-login/collection-load, post-sync, post-401-reset) default to `'ranked-grid'` instead; `backToComparison()` remains available via the header's vs icon

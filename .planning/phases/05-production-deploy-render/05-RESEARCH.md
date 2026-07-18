@@ -376,17 +376,19 @@ async function withColdStartRetry(fn, { retries = 3, delayMs = 15000 } = {}) {
 | A3 | `ALLOWED_ORIGIN: "*"` (wildcard CORS) is an acceptable default given the proxy uses a custom header (not cookies) for the SPA↔proxy leg, so no `credentials: true` is needed | Architecture Patterns Pattern 2, Security Domain | Low-Medium — a wildcard CORS origin means any web page could use this proxy as an open relay to BGG (though actual BGG auth still requires valid credentials); acceptable for a hobbyist single-user tool, but should be locked to a real origin once the SPA has a permanent production URL |
 | A4 | Render does not always honor `engines.node` reliably (community-forum sourced, not official docs) | Common Pitfalls, Pitfall 4 | Low — worst case, explicit `NODE_VERSION` envVar is a no-op belt-and-suspenders; costs nothing to include even if the underlying report is outdated |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **What is the production SPA's actual hosting origin (for CORS lock-down)?**
    - What we know: Phase 5's Success Criterion #5 only requires `npm run build` to succeed and the built static files to reach BGG through the Render proxy with no CORS errors — it does not name a specific static hosting target (Vercel/Netlify/GitHub Pages/Render Static Site). No hosting decision is recorded anywhere in PROJECT.md, ROADMAP.md, or CONTEXT.md.
    - What's unclear: Whether verification of SC#5 happens via `vite preview` (local, e.g. `http://localhost:4173`) hitting the live Render URL, or whether the user expects the SPA to also be genuinely publicly hosted by the end of this phase.
    - Recommendation: Treat SPA public hosting as out of scope for this phase (per the literal Success Criteria wording) and verify SC#5 via local `vite preview` against the live Render proxy. Use a wildcard or dashboard-editable (`sync: false`) `ALLOWED_ORIGIN` env var so CORS can be tightened later without a code change once real hosting is chosen. Flag this explicitly for user confirmation during planning if there's any ambiguity.
+   - **RESOLVED:** Planner adopted the recommendation as-is. 05-03 verifies SC-5 via local `vite preview` against the live Render URL; 05-02's `render.yaml` sets `ALLOWED_ORIGIN` as a `sync: false` dashboard-editable env var defaulting to wildcard, so CORS can be tightened later without a redeploy.
 
 2. **Should `proxy/server/` use TypeScript (build step) or plain JavaScript?**
    - What we know: D-03 locks "Node + Express," not a language. The rest of the codebase is strict TypeScript; the old (deleted) Firebase Function was also TypeScript.
    - What's unclear: Whether the user has a preference for consistency vs. the "simpler ops" philosophy that motivated the whole Render pivot.
    - Recommendation: Default to plain JavaScript (see Alternatives Considered) unless the user/planner has a strong consistency preference — a compile step is one more thing that can fail Render's build and adds no runtime benefit for a service this small.
+   - **RESOLVED:** Planner adopted the recommendation. 05-01 implements `proxy/server/` in plain JavaScript (`server.js`, `session.js`, `session.test.js`) — no TypeScript build step.
 
 ## Environment Availability
 

@@ -1,9 +1,9 @@
 ---
 phase: 05
 slug: production-deploy-render
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-17
 ---
 
@@ -75,11 +75,13 @@ This phase has no numbered `REQ-ID`s (infra/deploy phase, `phase_req_ids: null`)
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+Confirmed by gsd-plan-checker against 05-01/05-02/05-03-PLAN.md: every `auto` task carries a runnable `<automated>` verify command, no watch-mode flags, sampling continuity intact.
+
+**Approval:** approved 2026-07-17

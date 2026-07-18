@@ -1,103 +1,89 @@
-# BGG Proxy — Firebase Cloud Functions
+# BGG Proxy — Render Web Service
 
-This directory contains the Firebase Cloud Function that acts as the CORS proxy for production.
+This directory contains the Node + Express reverse proxy that acts as the production CORS
+proxy for the BGG API. It adds CORS headers and relays BGG's 3-cookie session so the SPA can
+call BGG from the browser. The proxy lives in `proxy/server/` and is deployed to Render via
+the repo-root `render.yaml` Blueprint.
 
-## Production Deployment
+## Overview
 
-After deploying the Firebase Function (`firebase deploy --only functions`), copy the Function URL into `.env.production`:
+BGG's API does not set permissive CORS headers, so browser clients cannot call it directly in
+production. `proxy/server/server.js` is a small Express app that:
 
-```
-VITE_BGG_API_BASE=https://us-central1-<YOUR_PROJECT_ID>.cloudfunctions.net/bgg
-```
+- Adds `Access-Control-Allow-Origin` (configurable via `ALLOWED_ORIGIN`)
+- Mirrors every incoming request path straight through to `boardgamegeek.com` (no path
+  rewriting or query-param wrapping)
+- On `/login`, captures BGG's full `Set-Cookie` set server-side, caches it in-process, and
+  returns only `{ "sessionId": "..." }` to the SPA
+- On all other requests, replays the cached 3-cookie session (`SessionID` + `bggusername` +
+  `bggpassword`) so authenticated calls (e.g. rating writes) succeed
+- Exposes `GET /healthz` for Render's health check
 
-The URL format is: `https://us-central1-<FIREBASE_PROJECT_ID>.cloudfunctions.net/bgg`
+## Production Deployment (Render)
 
-You can find the URL in the Firebase Console under Functions, or in the deploy output.
-
-## Setting VITE_BGG_API_BASE
-
-In `.env.production`, set:
-
-```
-VITE_BGG_API_BASE=https://us-central1-<YOUR_PROJECT_ID>.cloudfunctions.net/bgg
-```
-
-In `.env.development`, this is already set to `/bggapi` (Vite dev proxy).
-
-## Directory Structure
-
-```
-proxy/
-└── functions/
-    ├── src/
-    │   └── index.ts        # Firebase Cloud Function (CORS proxy for BGG API)
-    ├── package.json        # Firebase Functions dependencies
-    ├── tsconfig.json       # TypeScript config for Functions
-    └── lib/                # Compiled output (gitignored)
-```
-
-## Setup
-
-1. Ensure your Firebase project is on the **Blaze (pay-as-you-go)** plan.
-   The Spark free tier blocks outbound HTTP to external services (boardgamegeek.com).
-
-2. Install Firebase CLI globally (if not already installed):
-   ```bash
-   npm install -g firebase-tools
+1. Commit `render.yaml` (repo root) and `proxy/server/` — both are already tracked.
+2. In the Render dashboard, connect the GitHub repo and create/sync the Blueprint. This is a
+   browser-only OAuth step with no CLI equivalent — Render reads `render.yaml` and provisions
+   the `bgg-ranker-proxy` free-tier Node web service automatically.
+3. Once the service is live, copy its URL (e.g. `https://bgg-ranker-proxy.onrender.com`) into
+   `.env.production` as:
    ```
-
-3. Log in to Firebase:
-   ```bash
-   firebase login
+   VITE_BGG_API_BASE=https://bgg-ranker-proxy.onrender.com
    ```
+4. Rebuild the SPA (`npm run build`) so the new base URL is baked into the production bundle.
 
-4. Update `.firebaserc` with your actual project ID:
-   Replace `YOUR_FIREBASE_PROJECT_ID` with your Firebase project ID from
-   Firebase Console > Project Settings > General > Project ID.
-
-5. Build and deploy:
-   ```bash
-   cd proxy/functions && npm run build && cd ../..
-   firebase deploy --only functions
-   ```
-
-6. Copy the deployed Function URL to `.env.production`.
+**Cold starts:** the free tier spins the service down after ~15 minutes of inactivity. The
+first request after idle can take ~30-60 seconds while Render cold-starts the container. The
+SPA's existing retry/poll logic (and the smoke test's `withColdStartRetry` wrapper) tolerate
+this.
 
 ## Proxy Interface
 
-The Function forwards all requests to BGG using the `?path=` query parameter:
+The proxy mirrors BGG's real path structure directly — there is **no** query-parameter path
+wrapper. Requests are made straight to `<RENDER_URL><bgg-path>`:
 
-- Collection read: `GET <FIREBASE_URL>?path=/xmlapi2/collection?username=X&own=1&subtype=boardgame`
-- Login: `POST <FIREBASE_URL>?path=/login/api/v1`
-- Rate a game: `POST <FIREBASE_URL>?path=/api/geekrating` with `X-BGG-Session` header
+- Collection read: `GET <RENDER_URL>/xmlapi2/collection?username=X&own=1&subtype=boardgame`
+- Login: `POST <RENDER_URL>/login/api/v1`
+- Rate a game: `PUT <RENDER_URL>/api/collectionitem/{collId}` with an `X-BGG-Session` header
 
-For authenticated write calls, the SPA sends the session token as `X-BGG-Session` header.
-The Function reattaches it as `Cookie: sessionid=...` before forwarding to BGG.
+For authenticated write calls, the SPA sends the session token as the `X-BGG-Session` header.
+The proxy reattaches the cached 3-cookie session before forwarding to BGG.
 
-## Session Token Handling (D-07)
+## Session Token Handling
 
-The Firebase Function extracts BGG's `Set-Cookie` value from the login response and returns
-it as a JSON field (`{ "sessionId": "..." }`). The SPA stores this in Zustand `SessionState`
-(in-memory only, never written to localStorage — AUTH-03).
+The proxy captures BGG's full `Set-Cookie` set (SessionID + bggusername + bggpassword) from
+the login response server-side and returns only `{ "sessionId": "..." }` as JSON. The SPA
+stores this in Zustand `SessionState` (in-memory only, never written to localStorage —
+AUTH-03).
 
-**Set-Cookie is never relayed to the SPA.** This sidesteps `HttpOnly` cookie restrictions
-and satisfies AUTH-03 (credentials session-only, never persisted).
+**`Set-Cookie` is never relayed to the SPA.** This sidesteps `HttpOnly` cookie restrictions
+and satisfies AUTH-03 (credentials session-only, never persisted). The 3-cookie set is what
+the proxy's server-side session cache holds and replays on subsequent authenticated requests;
+that cache is wiped on cold start.
 
 ## Quick Verification
 
-After deployment, verify the Function works:
+Check the health endpoint:
 
 ```bash
-curl "https://us-central1-YOUR_PROJECT_ID.cloudfunctions.net/bgg?path=/xmlapi2/collection?username=boardgamegeek&own=1&subtype=boardgame" -v
+curl -f https://bgg-ranker-proxy.onrender.com/healthz
+```
+
+Expected: HTTP 200.
+
+Check a real collection read:
+
+```bash
+curl "https://bgg-ranker-proxy.onrender.com/xmlapi2/collection?username=boardgamegeek&own=1&subtype=boardgame" -v
 ```
 
 Expected: HTTP 200 or 202 response with XML body.
 
-Run the full prod smoke test:
+Run the full smoke test (covers read, login, and an authenticated rating write):
 
 ```bash
-FIREBASE_URL=https://us-central1-YOUR_PROJECT_ID.cloudfunctions.net/bgg \
+RENDER_URL=https://bgg-ranker-proxy.onrender.com \
 BGG_USERNAME=your-bgg-username \
 BGG_PASSWORD=your-bgg-password \
-bash scripts/smoke-test-prod.sh
+node scripts/smoke-test-render.mjs
 ```

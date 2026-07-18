@@ -4,7 +4,7 @@
 
 - ✅ **v0.9 — Core Loop** *(2026-05-25)* — Phases 1–3.1 · Core ranking, sync, persistence. See [milestones/v0.9-ROADMAP.md](milestones/v0.9-ROADMAP.md)
 - ✅ **v1.0 — Full Feature Release** *(2026-05-26)* — Phase 4 · Display polish, auto-resume, Firebase routing fix. See [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
-- 📋 **v1.1 — Production Deploy** — Phases 4.1 + 5 · List view cleanup, Firebase Cloud Function live
+- 📋 **v1.1 — Production Deploy** — Phases 4.1 + 5 · List view cleanup, Render proxy live
 
 ## Phases
 
@@ -31,6 +31,18 @@
   - [x] 04.1-01-PLAN.md — Store extension: add ranked-grid view state + showRankedGrid() action + tests
   - [x] 04.1-02-PLAN.md — RankedGridView component: 10x10 grid, DnD, pagination, image preloading
   - [x] 04.1-03-PLAN.md — Wiring: App.tsx view router + ComparisonView buttons
+
+**Phase 4.1 Goal:** The ranked list has two viewing modes — an existing simple text list (hamburger navigation) and a new 10×10 thumbnail grid view with drag-and-drop ranking. Grid shows 100 games at a time, shifts by 50, caches images for the session. Dirty flagging for unplayed→ranked game moves is verified.
+**Phase 4.1 Requirements:** (no formal REQ-IDs yet — will be assigned during discuss-phase)
+**Phase 4.1 Success Criteria:**
+
+  1. Ranked List view has a hamburger menu for navigation (consistent with ComparisonView pattern)
+  2. A "Grid View" button (grid icon) switches to a 10×10 thumbnail grid showing 100 ranked games
+  3. Grid is responsive; "Previous 50" / "Next 50" buttons shift the viewport by 50 games
+  4. Thumbnails in the grid support drag-and-drop reordering; dropped game updates ratings and marks dirty
+  5. Images are cached in session memory — navigating forward and back does not re-fetch loaded thumbnails
+  6. Moving an unplayed game to ranked position (via `moveUnplayedToRanked`) adds the game ID to `dirtyGameIds`
+
 - [x] Phase 04.1.1: UI Cleanup (INSERTED) — 4 plans (completed 2026-07-17)
   - [x] 04.1.1-01-PLAN.md — Universal Header component (hamburger + counts + vs/list/grid icons + username) + tests + App.tsx wiring (D-01..D-05)
   - [x] 04.1.1-02-PLAN.md — Remove per-view headers from all 4 views; ComparisonView cleanup — drop nav row, relocate red full-height Skip beside cards (D-04..D-09)
@@ -47,29 +59,22 @@
   4. ComparisonView's "Ranked list"/"Grid view"/"Unplayed" buttons are removed; Skip button is repositioned to the right of the two game cards, styled red, full column height
   5. All automatic `view: 'comparison'` transitions in store.ts (post-login/collection-load, post-sync, post-401-reset) default to `'ranked-grid'` instead; `backToComparison()` remains available via the header's vs icon
 
-- [ ] Phase 5: Firebase Production Deploy (1 plan)
+- [ ] Phase 5: Production Deploy (Render) (1 plan)
 
-**Phase 4.1 Goal:** The ranked list has two viewing modes — an existing simple text list (hamburger navigation) and a new 10×10 thumbnail grid view with drag-and-drop ranking. Grid shows 100 games at a time, shifts by 50, caches images for the session. Dirty flagging for unplayed→ranked game moves is verified.
-**Phase 4.1 Requirements:** (no formal REQ-IDs yet — will be assigned during discuss-phase)
-**Phase 4.1 Success Criteria:**
+### Phase 5: Production Deploy (Render)
 
-  1. Ranked List view has a hamburger menu for navigation (consistent with ComparisonView pattern)
-  2. A "Grid View" button (grid icon) switches to a 10×10 thumbnail grid showing 100 ranked games
-  3. Grid is responsive; "Previous 50" / "Next 50" buttons shift the viewport by 50 games
-  4. Thumbnails in the grid support drag-and-drop reordering; dropped game updates ratings and marks dirty
-  5. Images are cached in session memory — navigating forward and back does not re-fetch loaded thumbnails
-  6. Moving an unplayed game to ranked position (via `moveUnplayedToRanked`) adds the game ID to `dirtyGameIds`
-
-**Phase 5 Goal:** Firebase Cloud Function deployed and production CORS proxy operational — the app runs end-to-end in production with no CORS errors
+**Phase 5 Goal:** A production CORS proxy is deployed on Render (Node + Express, committed `render.yaml` Blueprint) and the app runs end-to-end in production with no CORS errors
 
 **Phase 5 Success Criteria:**
 
-1. Firebase CLI authenticated and `firebase deploy --only functions` completes; Function URL live
-2. `.env.production` updated with live Function URL as `VITE_BGG_API_BASE`
-3. `smoke-test-prod.sh` exits 0 with real credentials: collection read, login, write path all succeed
-4. `npm run build` succeeds; static files reach BGG through Firebase Function with no CORS errors
+1. Render Web Service (Node + Express) deployed via committed `render.yaml` Blueprint; service URL live
+2. Proxy relays all three BGG session cookies (SessionID + bggusername + bggpassword) on authenticated requests, mirroring `vite.config.ts`'s dev-proxy cookie store/replay logic — this is the only cookie-handling approach already confirmed to work against live BGG
+3. `.env.production` updated with the live Render service URL as `VITE_BGG_API_BASE`
+4. Automated smoke test (real credentials) exits 0: collection read, login, and rating write all succeed against the live Render URL
+5. `npm run build` succeeds; static files reach BGG through the Render proxy with no CORS errors
+6. Old Firebase artifacts removed: `proxy/functions/`, `firebase.json`, `.firebaserc` deleted; `proxy/README.md` rewritten for Render deployment/verification steps
 
-**Note:** Firebase Function source code, `firebase.json`, `.firebaserc`, and `scripts/smoke-test-prod.sh` already committed from Phase 1. Phase 5 only requires the CLI deploy step and updating `.env.production`.
+**Note (superseded 2026-07-17):** This phase was originally scoped as a Firebase Cloud Functions deploy — Firebase Function source code, `firebase.json`, and `.firebaserc` were committed from Phase 1, and `scripts/smoke-test-prod.sh` was claimed as "already committed" but was never actually created. During Phase 5 discussion, the user pivoted the production CORS proxy from Firebase to Render (simpler ops, no Blaze-plan GCP billing required). See `05-production-deploy/05-CONTEXT.md` for the full decision record, including a verified code-level gap in the old Firebase Function's cookie handling (single-cookie relay vs. BGG's actual 3-cookie requirement) that motivated building the new proxy correctly from the start rather than porting the old code forward.
 
 ## Progress
 
@@ -82,4 +87,4 @@
 | 4. Display Polish | v1.0 | 4/4 | Complete | 2026-05-26 |
 | 4.1. List View Cleanup (INSERTED) | v1.1 | 3/3 | Verified | 2026-05-26 |
 | 4.1.1. UI Cleanup (INSERTED) | v1.1 | 4/4 | Complete    | 2026-07-17 |
-| 5. Firebase Deploy | v1.1 | 0/1 | Not started | — |
+| 5. Production Deploy (Render) | v1.1 | 0/1 | Not started | — |

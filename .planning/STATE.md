@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Production Deploy
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-07-18T02:00:49.227Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-07-18T02:06:37.598Z"
 last_activity: 2026-07-18 -- Phase 05 execution started
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-26 after v1.0 milestone close)
 ## Current Position
 
 Phase: 05 (production-deploy-render) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-07-18 -- Phase 05 execution started
 
@@ -70,6 +70,8 @@ Most recent decisions:
 - [Phase 04.1.1]: Phase 04.1.1 Plan 04: Checkpoint approved with post-verification tweak — removed session/total count text and switched header to grid-cols-3 layout for true icon-cluster centering (justify-self-start/center/end)
 - [Phase 05]: 05-01: express.raw() single body parser used instead of chained express.json()+express.text() to avoid double-consuming the request stream and dropping login credentials — Prevents silent req.body loss on /login (D-07's core requirement)
 - [Phase 05]: 05-01: Smoke test parses collid/objectid/rating from collection XML via regex (no XML parser dependency) to keep the script dependency-free
+- [Phase 05]: 05-02: render.yaml placed at repo root (conventional Blueprint location, no conflict with existing config)
+- [Phase 05]: 05-02: ALLOWED_ORIGIN wildcard with sync:false accepted (T-05-03) since SPA-proxy auth uses X-BGG-Session header, not credentialed cookies
 
 ### Roadmap Evolution
 
@@ -102,9 +104,10 @@ None.
 | Phase 04.1.1 P02 | 10min | 3 tasks | 5 files |
 | Phase 04.1.1 P04 | 12min | 2 tasks | 2 files |
 | Phase 05 P01 | 7min | 3 tasks | 6 files |
+| Phase 05-production-deploy-render P02 | 1min | 3 tasks | 8 files |
 
 ## Session Continuity
 
-Last session: 2026-07-18T02:00:49.221Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-07-18T02:06:37.590Z
+Stopped at: Completed 05-02-PLAN.md
 Resume with: `/gsd-execute-phase 4.1.1` (UI Cleanup)

@@ -61,7 +61,7 @@
 
 - [ ] Phase 5: Production Deploy (Render) — 3 plans
   - [x] 05-01-PLAN.md — Node/Express CORS proxy (proxy/server/): 3-cookie relay ported from vite.config.ts, /healthz, unit-tested cookie helpers, real-credential smoke test (SC-2, SC-4)
-  - [ ] 05-02-PLAN.md — Committed render.yaml Blueprint (free-tier Node service) + delete Firebase artifacts + rewrite proxy/README.md for Render (SC-1, SC-6)
+  - [x] 05-02-PLAN.md — Committed render.yaml Blueprint (free-tier Node service) + delete Firebase artifacts + rewrite proxy/README.md for Render (SC-1, SC-6)
   - [ ] 05-03-PLAN.md — Deploy: human connects repo/syncs Blueprint (checkpoint), wire .env.production to live URL, live smoke test, build/CORS verify (SC-1, SC-2, SC-3, SC-4, SC-5)
 
 ### Phase 5: Production Deploy (Render)
@@ -90,4 +90,4 @@
 | 4. Display Polish | v1.0 | 4/4 | Complete | 2026-05-26 |
 | 4.1. List View Cleanup (INSERTED) | v1.1 | 3/3 | Verified | 2026-05-26 |
 | 4.1.1. UI Cleanup (INSERTED) | v1.1 | 4/4 | Complete    | 2026-07-17 |
-| 5. Production Deploy (Render) | v1.1 | 1/3 | In Progress|  |
+| 5. Production Deploy (Render) | v1.1 | 2/3 | In Progress|  |

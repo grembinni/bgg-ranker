@@ -59,7 +59,10 @@
   4. ComparisonView's "Ranked list"/"Grid view"/"Unplayed" buttons are removed; Skip button is repositioned to the right of the two game cards, styled red, full column height
   5. All automatic `view: 'comparison'` transitions in store.ts (post-login/collection-load, post-sync, post-401-reset) default to `'ranked-grid'` instead; `backToComparison()` remains available via the header's vs icon
 
-- [ ] Phase 5: Production Deploy (Render) (1 plan)
+- [ ] Phase 5: Production Deploy (Render) — 3 plans
+  - [ ] 05-01-PLAN.md — Node/Express CORS proxy (proxy/server/): 3-cookie relay ported from vite.config.ts, /healthz, unit-tested cookie helpers, real-credential smoke test (SC-2, SC-4)
+  - [ ] 05-02-PLAN.md — Committed render.yaml Blueprint (free-tier Node service) + delete Firebase artifacts + rewrite proxy/README.md for Render (SC-1, SC-6)
+  - [ ] 05-03-PLAN.md — Deploy: human connects repo/syncs Blueprint (checkpoint), wire .env.production to live URL, live smoke test, build/CORS verify (SC-1, SC-2, SC-3, SC-4, SC-5)
 
 ### Phase 5: Production Deploy (Render)
 
@@ -87,4 +90,4 @@
 | 4. Display Polish | v1.0 | 4/4 | Complete | 2026-05-26 |
 | 4.1. List View Cleanup (INSERTED) | v1.1 | 3/3 | Verified | 2026-05-26 |
 | 4.1.1. UI Cleanup (INSERTED) | v1.1 | 4/4 | Complete    | 2026-07-17 |
-| 5. Production Deploy (Render) | v1.1 | 0/1 | Not started | — |
+| 5. Production Deploy (Render) | v1.1 | 0/3 | Planned | — |

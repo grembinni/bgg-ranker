@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Production Deploy
-status: executing
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-07-18T02:06:37.598Z"
-last_activity: 2026-07-18 -- Phase 05 execution started
+status: blocked
+stopped_at: Paused 05-03-PLAN.md (BGG XML API auth blocker)
+last_updated: "2026-07-18T02:49:53Z"
+last_activity: 2026-07-18 -- Phase 05 paused mid-execution on 05-03 (BGG XML API now requires Bearer-token auth)
 progress:
   total_phases: 1
   completed_phases: 0
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-26 after v1.0 milestone close)
 
 ## Current Position
 
-Phase: 05 (production-deploy-render) — EXECUTING
-Plan: 3 of 3
-Status: Ready to execute
-Last activity: 2026-07-18 -- Phase 05 execution started
+Phase: 05 (production-deploy-render) — PAUSED (blocked)
+Plan: 3 of 3 (Task 1 complete, Task 2 partially complete, Task 3 not reached)
+Status: Blocked on external BGG XML API auth change — see Blockers/Concerns
+Last activity: 2026-07-18 -- Phase 05 paused mid-execution on 05-03 (BGG XML API now requires Bearer-token auth)
 
 Progress: [██████████] Phase 1 | [██████████] Phase 2 | [██████████] Phase 3 | [██████████] Phase 3.1 | [██████████] Phase 4 | [          ] Phase 5
 
@@ -72,6 +72,8 @@ Most recent decisions:
 - [Phase 05]: 05-01: Smoke test parses collid/objectid/rating from collection XML via regex (no XML parser dependency) to keep the script dependency-free
 - [Phase 05]: 05-02: render.yaml placed at repo root (conventional Blueprint location, no conflict with existing config)
 - [Phase 05]: 05-02: ALLOWED_ORIGIN wildcard with sync:false accepted (T-05-03) since SPA-proxy auth uses X-BGG-Session header, not credentialed cookies
+- [Phase 05]: 05-03: render.yaml fixed mid-checkpoint (e6b1151) — removed stray `value: "*"` from the sync:false ALLOWED_ORIGIN var; Render's schema rejects an env var specifying both `value` and `sync` simultaneously
+- [Phase 05]: 05-03 PAUSED — BGG XML API now requires app-registration + Bearer-token auth (~Oct 2025 rollout); collection reads 401 for all callers, confirmed independent of this repo's proxy code. Phase 5 cannot complete until a BGG API token is obtained and wired into proxy/server/server.js
 
 ### Roadmap Evolution
 
@@ -84,8 +86,9 @@ None.
 
 ### Blockers/Concerns
 
-- Phase 5: Firebase production deploy required for production use — `VITE_BGG_API_BASE` must point to live Function URL
-- Firebase 1-cookie vs 3-cookie BGG auth — write path unverified against live BGG in production; risk flagged in Phase 5 scope
+- **Phase 5 blocked:** BGG XML API now requires app registration + Bearer token auth (rolled out ~Oct 2025); collection reads return 401 until the proxy forwards an Authorization header from a BGG-issued token. User needs to register the app at boardgamegeek.com/using_the_xml_api to obtain a token before 05-03 can complete. Root-caused independently (401 reproduced via direct curl to boardgamegeek.com bypassing the proxy, for both the user's own account and a public well-known username; even the historically-public `xmlapi2/thing` endpoint 401s). Not a defect in `proxy/server/`, `render.yaml`, or `.env.production` — those are all correctly configured (SC-1, SC-3 satisfied). See `.planning/phases/05-production-deploy-render/05-03-SUMMARY.md` for full investigation notes.
+- Phase 5: Firebase production deploy required for production use — `VITE_BGG_API_BASE` must point to live Function URL (superseded by Render pivot; note kept for history)
+- Firebase 1-cookie vs 3-cookie BGG auth — write path unverified against live BGG in production; risk flagged in Phase 5 scope. Now also unverified against the new Bearer-token requirement (rating-write endpoint was never reached in the failed smoke-test run).
 - Phase 1 VERIFICATION.md absent — RANK-06/07/08/09 code correct; doc-only gap, low priority
 
 ## Deferred Items
@@ -108,6 +111,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-18T02:06:37.590Z
-Stopped at: Completed 05-02-PLAN.md
-Resume with: `/gsd-execute-phase 4.1.1` (UI Cleanup)
+Last session: 2026-07-18T02:49:53Z
+Stopped at: Paused 05-03-PLAN.md — blocked on BGG XML API Bearer-token auth requirement (see Blockers/Concerns)
+Resume with: Once a BGG API token has been obtained (boardgamegeek.com/using_the_xml_api), resume 05-03 at Task 2 (live smoke test), after wiring the token into `proxy/server/server.js`'s upstream requests.

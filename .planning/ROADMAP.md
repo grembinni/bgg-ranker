@@ -62,7 +62,7 @@
 - [ ] Phase 5: Production Deploy (Render) — 3 plans
   - [x] 05-01-PLAN.md — Node/Express CORS proxy (proxy/server/): 3-cookie relay ported from vite.config.ts, /healthz, unit-tested cookie helpers, real-credential smoke test (SC-2, SC-4)
   - [x] 05-02-PLAN.md — Committed render.yaml Blueprint (free-tier Node service) + delete Firebase artifacts + rewrite proxy/README.md for Render (SC-1, SC-6)
-  - [ ] 05-03-PLAN.md — Deploy: human connects repo/syncs Blueprint (checkpoint), wire .env.production to live URL, live smoke test, build/CORS verify (SC-1, SC-2, SC-3, SC-4, SC-5)
+  - [ ] 05-03-PLAN.md — **BLOCKED**: Deploy: human connects repo/syncs Blueprint (checkpoint) ✅, wire .env.production to live URL ✅, live smoke test ❌ (BGG XML API now requires Bearer-token auth, ~Oct 2025 rollout — external platform change), build/CORS verify not reached (SC-1 ✅, SC-2 ❌, SC-3 ✅, SC-4 ❌, SC-5 not reached) — see 05-03-SUMMARY.md
 
 ### Phase 5: Production Deploy (Render)
 
@@ -77,6 +77,8 @@
 5. `npm run build` succeeds; static files reach BGG through the Render proxy with no CORS errors
 6. Old Firebase artifacts removed: `proxy/functions/`, `firebase.json`, `.firebaserc` deleted; `proxy/README.md` rewritten for Render deployment/verification steps
 
+**Note (blocked 2026-07-18):** Plan 05-03 is paused. Render is live (SC-1) and `.env.production` points at it (SC-3), but the live smoke test fails — BGG rolled out mandatory XML API app-registration + Bearer-token authorization (~Oct 2025), confirmed via independent investigation to be an external platform change, not a defect in this repo's proxy/render code. Resume requires the user to register for a BGG API token at boardgamegeek.com/using_the_xml_api and wire `Authorization: Bearer <token>` into `proxy/server/server.js`'s upstream requests. See `05-production-deploy-render/05-03-SUMMARY.md` for full investigation notes.
+
 **Note (superseded 2026-07-17):** This phase was originally scoped as a Firebase Cloud Functions deploy — Firebase Function source code, `firebase.json`, and `.firebaserc` were committed from Phase 1, and `scripts/smoke-test-prod.sh` was claimed as "already committed" but was never actually created. During Phase 5 discussion, the user pivoted the production CORS proxy from Firebase to Render (simpler ops, no Blaze-plan GCP billing required). See `05-production-deploy/05-CONTEXT.md` for the full decision record, including a verified code-level gap in the old Firebase Function's cookie handling (single-cookie relay vs. BGG's actual 3-cookie requirement) that motivated building the new proxy correctly from the start rather than porting the old code forward.
 
 ## Progress
@@ -90,4 +92,4 @@
 | 4. Display Polish | v1.0 | 4/4 | Complete | 2026-05-26 |
 | 4.1. List View Cleanup (INSERTED) | v1.1 | 3/3 | Verified | 2026-05-26 |
 | 4.1.1. UI Cleanup (INSERTED) | v1.1 | 4/4 | Complete    | 2026-07-17 |
-| 5. Production Deploy (Render) | v1.1 | 2/3 | In Progress|  |
+| 5. Production Deploy (Render) | v1.1 | 2/3 | Blocked (BGG XML API auth change) |  |

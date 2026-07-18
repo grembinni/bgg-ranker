@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'proxy/**/*.test.js'],
     passWithNoTests: true,
     environmentMatchGlobs: [
       ['src/**/*.test.tsx', 'jsdom'],
